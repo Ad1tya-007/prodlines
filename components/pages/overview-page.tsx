@@ -1,0 +1,453 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { 
+  Code2, 
+  Users, 
+  Clock, 
+  FileX, 
+  TrendingUp, 
+  TrendingDown, 
+  Minus,
+  X,
+  Plus,
+  Info,
+  GitBranch,
+  ChevronRight
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { mockContributors, kpiData } from "@/lib/mock-data"
+
+// KPI Cards
+const kpiCards = [
+  {
+    title: "Production LOC",
+    value: kpiData.productionLOC.toLocaleString(),
+    description: "Lines in production",
+    icon: Code2,
+    trend: "+2.3%",
+    trendUp: true,
+  },
+  {
+    title: "Active Contributors",
+    value: kpiData.activeContributors.toString(),
+    description: "This month",
+    icon: Users,
+    trend: "+1",
+    trendUp: true,
+  },
+  {
+    title: "Last Sync",
+    value: kpiData.lastSync,
+    description: "Auto-sync enabled",
+    icon: Clock,
+    trend: null,
+    trendUp: null,
+  },
+  {
+    title: "Excluded LOC",
+    value: kpiData.excludedLOC.toLocaleString(),
+    description: "Tests, docs, generated",
+    icon: FileX,
+    trend: "-5.1%",
+    trendUp: false,
+  },
+]
+
+// Filter chips
+const defaultExcludes = ["**/node_modules/**", "**/dist/**", "**/*.min.js", "**/vendor/**"]
+const defaultIncludes = ["src/**", "lib/**", "components/**"]
+
+function KPICard({ card, index }: { card: typeof kpiCards[0]; index: number }) {
+  return (
+    <Card 
+      className="hover-card group bg-card/50 border-border/50 opacity-0 animate-fade-in"
+      style={{ animationDelay: `${index * 100}ms`, animationFillMode: "forwards" }}
+    >
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {card.title}
+        </CardTitle>
+        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:rounded-none transition-all duration-200">
+          <card.icon className="h-4 w-4 text-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{card.value}</div>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-muted-foreground">{card.description}</p>
+          {card.trend && (
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "text-xs",
+                card.trendUp ? "text-green-500 border-green-500/30" : "text-red-500 border-red-500/30"
+              )}
+            >
+              {card.trendUp ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+              {card.trend}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function KPICardSkeleton() {
+  return (
+    <Card className="bg-card/50 border-border/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-8 w-20 mb-2" />
+        <Skeleton className="h-3 w-32" />
+      </CardContent>
+    </Card>
+  )
+}
+
+function LeaderboardRow({ contributor, rank }: { contributor: typeof mockContributors[0]; rank: number }) {
+  const isTopThree = rank <= 3
+  
+  return (
+    <Link
+      href={`/app/leaderboard/1?contributor=${contributor.id}`}
+      className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none"
+    >
+      <div className="flex items-center gap-4">
+        <span 
+          className={cn(
+            "w-8 text-center font-bold text-lg",
+            rank === 1 && "text-amber-500",
+            rank === 2 && "text-zinc-400",
+            rank === 3 && "text-amber-700",
+            rank > 3 && "text-muted-foreground"
+          )}
+        >
+          {rank}
+        </span>
+        <Avatar className={cn(
+          "h-9 w-9 transition-all duration-200",
+          isTopThree ? "ring-2 ring-offset-2 ring-offset-background" : "",
+          rank === 1 && "ring-amber-500",
+          rank === 2 && "ring-zinc-400",
+          rank === 3 && "ring-amber-700"
+        )}>
+          <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
+            {contributor.username.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-medium">{contributor.username}</p>
+          {isTopThree && (
+            <p className="text-xs text-muted-foreground">
+              {contributor.topFiles[0]?.split("/").pop()}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-6">
+        <div className="text-right hidden sm:block">
+          <p className="font-mono text-sm">{contributor.productionLOC.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">LOC</p>
+        </div>
+        <div className="w-16 text-right">
+          <Badge variant="secondary" className="font-mono">
+            {contributor.percentShare}%
+          </Badge>
+        </div>
+        <div className="w-16 flex items-center justify-end gap-1">
+          {contributor.trend === "up" && (
+            <>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              <span className="text-xs text-green-500">+{contributor.trendValue}%</span>
+            </>
+          )}
+          {contributor.trend === "down" && (
+            <>
+              <TrendingDown className="h-4 w-4 text-red-500" />
+              <span className="text-xs text-red-500">-{contributor.trendValue}%</span>
+            </>
+          )}
+          {contributor.trend === "neutral" && (
+            <Minus className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </Link>
+  )
+}
+
+function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-2 p-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between py-3">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-6 w-8" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="flex items-center gap-6">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-6 w-12" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FilterChip({ label, onRemove }: { label: string; onRemove?: () => void }) {
+  return (
+    <Badge variant="secondary" className="text-xs flex items-center gap-1 pr-1">
+      <span className="font-mono">{label}</span>
+      {onRemove && (
+        <button 
+          onClick={onRemove} 
+          className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </Badge>
+  )
+}
+
+function EmptyState() {
+  return (
+    <Card className="hover-card bg-card/50 border-border/50">
+      <CardContent className="flex flex-col items-center justify-center py-16">
+        <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mb-4">
+          <GitBranch className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2">No repository connected</h3>
+        <p className="text-muted-foreground text-sm text-center max-w-sm mb-6">
+          Connect a GitHub repository to see your production code leaderboard.
+        </p>
+        <Button className="hover-button" asChild>
+          <Link href="/app/repos">
+            <Plus className="h-4 w-4 mr-2" />
+            Connect a repo
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function OverviewPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [showEmpty, setShowEmpty] = useState(false)
+  const [excludeBots, setExcludeBots] = useState(true)
+  const [excludeTests, setExcludeTests] = useState(true)
+  const [excludeDocs, setExcludeDocs] = useState(true)
+
+  // Simulate loading for demo
+  const triggerLoading = () => {
+    setIsLoading(true)
+    setTimeout(() => setIsLoading(false), 1500)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Overview</h1>
+          <p className="text-muted-foreground">Production code ownership for acme-corp/frontend-app</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={triggerLoading} className="hover-button bg-transparent">
+            {isLoading ? "Loading..." : "Refresh"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowEmpty(!showEmpty)} className="hover-button">
+            {showEmpty ? "Show Data" : "Show Empty"}
+          </Button>
+        </div>
+      </div>
+
+      {showEmpty ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* KPI Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {isLoading
+              ? [...Array(4)].map((_, i) => <KPICardSkeleton key={i} />)
+              : kpiCards.map((card, index) => (
+                  <KPICard key={card.title} card={card} index={index} />
+                ))}
+          </div>
+
+          {/* Main content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Leaderboard - takes 2 columns */}
+            <Card className="lg:col-span-2 hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-200" style={{ animationFillMode: "forwards" }}>
+              <CardHeader className="border-b border-border/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Leaderboard</CardTitle>
+                    <CardDescription>Production LOC ownership ranking</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" className="hover-button bg-transparent" asChild>
+                    <Link href="/app/leaderboard/1">
+                      View all
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <LeaderboardSkeleton />
+                ) : (
+                  <div className="divide-y divide-border/50">
+                    {mockContributors.slice(0, 8).map((contributor, index) => (
+                      <LeaderboardRow 
+                        key={contributor.id} 
+                        contributor={contributor} 
+                        rank={index + 1} 
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Right sidebar - filters and definitions */}
+            <div className="space-y-6">
+              {/* Filters */}
+              <Card className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-300" style={{ animationFillMode: "forwards" }}>
+                <CardHeader>
+                  <CardTitle className="text-base">Filters</CardTitle>
+                  <CardDescription>Configure counting rules</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Exclude patterns */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Exclude paths</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {defaultExcludes.map((pattern) => (
+                        <FilterChip key={pattern} label={pattern} onRemove={() => {}} />
+                      ))}
+                      <Button variant="ghost" size="sm" className="h-6 text-xs hover-button">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Include patterns */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Include paths</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {defaultIncludes.map((pattern) => (
+                        <FilterChip key={pattern} label={pattern} onRemove={() => {}} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* File type filter */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">File types</Label>
+                    <Select defaultValue="all">
+                      <SelectTrigger className="hover-button">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All files</SelectItem>
+                        <SelectItem value="ts">TypeScript only</SelectItem>
+                        <SelectItem value="js">JavaScript only</SelectItem>
+                        <SelectItem value="tsx">React (TSX/JSX)</SelectItem>
+                        <SelectItem value="css">Styles (CSS/SCSS)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Toggle options */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="exclude-tests" className="text-sm">Exclude tests</Label>
+                      <Switch 
+                        id="exclude-tests" 
+                        checked={excludeTests}
+                        onCheckedChange={setExcludeTests}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="exclude-docs" className="text-sm">Exclude docs</Label>
+                      <Switch 
+                        id="exclude-docs" 
+                        checked={excludeDocs}
+                        onCheckedChange={setExcludeDocs}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="exclude-bots" className="text-sm">Exclude bots</Label>
+                      <Switch 
+                        id="exclude-bots" 
+                        checked={excludeBots}
+                        onCheckedChange={setExcludeBots}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Definitions */}
+              <Card className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-400" style={{ animationFillMode: "forwards" }}>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Definitions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium">Production LOC</p>
+                    <p className="text-muted-foreground text-xs">
+                      Lines of code in the default branch that have been merged via pull request.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Ownership</p>
+                    <p className="text-muted-foreground text-xs">
+                      Based on git blame. The last person to modify a line owns it.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Trend</p>
+                    <p className="text-muted-foreground text-xs">
+                      Week-over-week change in ownership percentage.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
