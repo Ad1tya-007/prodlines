@@ -6,9 +6,6 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   github_username: string | null
-  company: string | null
-  role: string | null
-  bio: string | null
   created_at: string
   updated_at: string
 }
@@ -17,9 +14,6 @@ export interface ProfileUpdate {
   full_name?: string
   avatar_url?: string
   github_username?: string
-  company?: string
-  role?: string
-  bio?: string
 }
 
 // Client-side functions
