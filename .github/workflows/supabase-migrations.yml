@@ -1,0 +1,51 @@
+name: Supabase Migrations
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-migrations.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+
+jobs:
+  validate-migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase locally
+        run: |
+          supabase start
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD || 'postgres' }}
+
+      - name: Validate migrations
+        run: |
+          supabase db reset --db-url postgresql://postgres:postgres@localhost:54322/postgres
+        continue-on-error: false
+
+      - name: Check migration syntax
+        run: |
+          for migration in supabase/migrations/*.sql; do
+            if [ -f "$migration" ]; then
+              echo "Validating $migration..."
+              psql postgresql://postgres:postgres@localhost:54322/postgres -f "$migration" || exit 1
+            fi
+          done
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
