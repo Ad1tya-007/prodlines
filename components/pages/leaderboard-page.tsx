@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   GitBranch,
   Clock,
@@ -36,25 +37,31 @@ import {
   ChevronRight,
   ArrowUpDown,
   Filter,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  mockContributors,
-  mockFiles,
-  mockPRs,
-  mockRepos,
-} from '@/lib/mock-data';
+import type { GitHubStats, GitHubContributor } from '@/lib/types/github';
 import { useSearchParams } from 'next/navigation';
 
-// Get first repo as current
-const currentRepo = mockRepos[0];
+interface LeaderboardPageProps {
+  stats: GitHubStats | null;
+  repoInfo: {
+    id: string;
+    full_name: string;
+    owner: string;
+    name: string;
+    default_branch: string;
+    last_synced_at?: string;
+  } | null;
+  repoFullName: string;
+}
 
 function ContributorDetailModal({
   contributor,
   open,
   onClose,
 }: {
-  contributor: (typeof mockContributors)[0] | null;
+  contributor: GitHubContributor | null;
   open: boolean;
   onClose: () => void;
 }) {
@@ -66,6 +73,10 @@ function ContributorDetailModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
+              <AvatarImage
+                src={contributor.avatarUrl}
+                alt={contributor.username}
+              />
               <AvatarFallback className="bg-secondary text-foreground">
                 {contributor.username.slice(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -147,16 +158,34 @@ function ContributorDetailModal({
   );
 }
 
-function ContributorsTab() {
-  const [selectedContributor, setSelectedContributor] = useState<
-    (typeof mockContributors)[0] | null
-  >(null);
+function ContributorsTab({
+  contributors,
+}: {
+  contributors: GitHubContributor[];
+}) {
+  const [selectedContributor, setSelectedContributor] =
+    useState<GitHubContributor | null>(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('loc');
 
-  const filteredContributors = mockContributors.filter((c) =>
+  let filteredContributors = contributors.filter((c) =>
     c.username.toLowerCase().includes(search.toLowerCase()),
   );
+
+  // Sort contributors
+  if (sortBy === 'loc') {
+    filteredContributors = [...filteredContributors].sort(
+      (a, b) => b.productionLOC - a.productionLOC,
+    );
+  } else if (sortBy === 'share') {
+    filteredContributors = [...filteredContributors].sort(
+      (a, b) => b.percentShare - a.percentShare,
+    );
+  } else if (sortBy === 'name') {
+    filteredContributors = [...filteredContributors].sort((a, b) =>
+      a.username.localeCompare(b.username),
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -230,12 +259,18 @@ function ContributorsTab() {
                         rank === 2 && 'ring-zinc-400',
                         rank === 3 && 'ring-amber-700',
                       )}>
+                      <AvatarImage
+                        src={contributor.avatarUrl}
+                        alt={contributor.username}
+                      />
                       <AvatarFallback className="bg-secondary text-foreground text-sm">
                         {contributor.username.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{contributor.username}</p>
+                      <p className="font-medium hover:underline cursor-pointer">
+                        {contributor.username}
+                      </p>
                       <p className="text-xs text-muted-foreground sm:hidden">
                         {contributor.productionLOC.toLocaleString()} LOC
                       </p>
@@ -290,10 +325,46 @@ function ContributorsTab() {
   );
 }
 
-function FilesTab() {
+function FilesTab({ contributors }: { contributors: GitHubContributor[] }) {
   const [search, setSearch] = useState('');
+  const [files, setFiles] = useState<
+    Array<{ id: string; path: string; owner: string; ownedLOC: number }>
+  >([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredFiles = mockFiles.filter(
+  // Extract files from contributors' topFiles
+  useEffect(() => {
+    const fileMap = new Map<string, { owner: string; ownedLOC: number }>();
+
+    contributors.forEach((contributor) => {
+      contributor.topFiles.forEach((filePath) => {
+        if (!fileMap.has(filePath)) {
+          fileMap.set(filePath, {
+            owner: contributor.username,
+            ownedLOC: Math.floor(
+              contributor.productionLOC /
+                Math.max(contributor.topFiles.length, 1),
+            ),
+          });
+        }
+      });
+    });
+
+    const filesWithId: Array<{
+      id: string;
+      path: string;
+      owner: string;
+      ownedLOC: number;
+    }> = Array.from(fileMap.entries()).map(([path, data], index) => ({
+      id: `file-${index}`,
+      path,
+      ...data,
+    }));
+    setFiles(filesWithId);
+    setLoading(false);
+  }, [contributors]);
+
+  const filteredFiles = files.filter(
     (f) =>
       f.path.toLowerCase().includes(search.toLowerCase()) ||
       f.owner.toLowerCase().includes(search.toLowerCase()),
@@ -361,7 +432,7 @@ function FilesTab() {
                   </Badge>
                 </div>
                 <div className="col-span-2 text-right text-sm text-muted-foreground">
-                  {file.lastModified}
+                  {/* Last modified not available from current API */}
                 </div>
               </div>
             ))}
@@ -372,10 +443,28 @@ function FilesTab() {
   );
 }
 
-function PRsTab() {
+function PRsTab({ contributors }: { contributors: GitHubContributor[] }) {
   const [search, setSearch] = useState('');
 
-  const filteredPRs = mockPRs.filter(
+  // Extract PRs from contributors' recentPRs
+  const prs = contributors.flatMap((contributor) =>
+    contributor.recentPRs.map((title, index) => ({
+      id: `${contributor.id}-pr-${index}`,
+      title,
+      author: contributor.username,
+      mergedAt: 'recent',
+      additions: Math.floor(
+        contributor.productionLOC / Math.max(contributor.recentPRs.length, 1),
+      ),
+      deletions: Math.floor(
+        contributor.productionLOC /
+          Math.max(contributor.recentPRs.length, 1) /
+          2,
+      ),
+    })),
+  );
+
+  const filteredPRs = prs.filter(
     (pr) =>
       pr.title.toLowerCase().includes(search.toLowerCase()) ||
       pr.author.toLowerCase().includes(search.toLowerCase()),
@@ -440,14 +529,52 @@ function PRsTab() {
   );
 }
 
-export function LeaderboardPage() {
+export function LeaderboardPage({
+  stats,
+  repoInfo,
+  repoFullName,
+}: LeaderboardPageProps) {
   const [copied, setCopied] = useState(false);
-  const searchParams = useSearchParams();
 
   const handleCopyLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const formatLastSync = (lastSync: string | undefined) => {
+    if (!lastSync) return 'Never';
+    try {
+      const date = new Date(lastSync);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60)
+        return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24)
+        return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    } catch {
+      return lastSync;
+    }
+  };
+
+  const [owner, repo] = repoFullName.split('/');
+  const contributors = stats?.contributors || [];
+  const isLoading = !stats && !repoInfo;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('LeaderboardPage - stats:', stats);
+    console.log('LeaderboardPage - repoInfo:', repoInfo);
+    console.log('LeaderboardPage - repoFullName:', repoFullName);
+    console.log('LeaderboardPage - isLoading:', isLoading);
+  }, [stats, repoInfo, repoFullName, isLoading]);
 
   return (
     <div className="space-y-6">
@@ -456,23 +583,32 @@ export function LeaderboardPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">
-              {currentRepo.owner}/{currentRepo.name}
+              {owner}/{repo}
             </h1>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <GitBranch className="h-3 w-3" />
-              {currentRepo.branch}
-            </Badge>
+            {repoInfo && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
+                {repoInfo.default_branch}
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              Last sync: {currentRepo.lastSync}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              {currentRepo.contributors} contributors
-            </span>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center gap-3 mt-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ) : stats ? (
+            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                Last sync: {formatLastSync(stats.lastSync)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                {stats.activeContributors} contributors
+              </span>
+            </div>
+          ) : null}
         </div>
         <Button
           variant="outline"
@@ -492,41 +628,67 @@ export function LeaderboardPage() {
         </Button>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="contributors" className="space-y-4">
-        <TabsList className="bg-secondary/50 p-1">
-          <TabsTrigger
-            value="contributors"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
-            <Users className="h-4 w-4 mr-2" />
-            Contributors
-          </TabsTrigger>
-          <TabsTrigger
-            value="files"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
-            <FileCode className="h-4 w-4 mr-2" />
-            Files
-          </TabsTrigger>
-          <TabsTrigger
-            value="prs"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
-            <GitPullRequest className="h-4 w-4 mr-2" />
-            PRs (merged)
-          </TabsTrigger>
-        </TabsList>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Loading leaderboard data...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Fetching from GitHub API...
+          </p>
+        </div>
+      ) : !stats ? (
+        <Card className="hover-card bg-card/50 border-border/50">
+          <CardContent className="p-8 text-center space-y-4">
+            <p className="text-destructive font-medium">
+              Failed to load leaderboard data.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Repository: {repoFullName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Check the browser console for error details.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Tabs */
+        <Tabs defaultValue="contributors" className="space-y-4">
+          <TabsList className="bg-secondary/50 p-1">
+            <TabsTrigger
+              value="contributors"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
+              <Users className="h-4 w-4 mr-2" />
+              Contributors
+            </TabsTrigger>
+            <TabsTrigger
+              value="files"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
+              <FileCode className="h-4 w-4 mr-2" />
+              Files
+            </TabsTrigger>
+            <TabsTrigger
+              value="prs"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
+              <GitPullRequest className="h-4 w-4 mr-2" />
+              PRs (merged)
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="contributors" className="mt-4">
-          <ContributorsTab />
-        </TabsContent>
+          <TabsContent value="contributors" className="mt-4">
+            <ContributorsTab contributors={contributors} />
+          </TabsContent>
 
-        <TabsContent value="files" className="mt-4">
-          <FilesTab />
-        </TabsContent>
+          <TabsContent value="files" className="mt-4">
+            <FilesTab contributors={contributors} />
+          </TabsContent>
 
-        <TabsContent value="prs" className="mt-4">
-          <PRsTab />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="prs" className="mt-4">
+            <PRsTab contributors={contributors} />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

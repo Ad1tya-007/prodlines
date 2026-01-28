@@ -1,71 +1,69 @@
-"use client"
+'use client';
 
-import { useState, Suspense } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useState, Suspense, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { 
-  Github, 
-  Search, 
-  Check, 
-  ChevronRight, 
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Github,
+  Search,
+  Check,
+  ChevronRight,
   ChevronLeft,
   GitBranch,
   Settings2,
   Play,
   X,
   Plus,
-  Lock
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useSearchParams } from "next/navigation"
-
-// Mock repositories for selection
-const availableRepos = [
-  { id: "1", name: "frontend-app", owner: "acme-corp", isPrivate: false, language: "TypeScript", stars: 234 },
-  { id: "2", name: "api-server", owner: "acme-corp", isPrivate: true, language: "TypeScript", stars: 89 },
-  { id: "3", name: "shared-lib", owner: "acme-corp", isPrivate: false, language: "TypeScript", stars: 156 },
-  { id: "4", name: "mobile-app", owner: "acme-corp", isPrivate: true, language: "TypeScript", stars: 45 },
-  { id: "5", name: "infra-tools", owner: "acme-corp", isPrivate: true, language: "Go", stars: 23 },
-  { id: "6", name: "docs-site", owner: "acme-corp", isPrivate: false, language: "MDX", stars: 67 },
-  { id: "7", name: "design-system", owner: "acme-corp", isPrivate: false, language: "TypeScript", stars: 312 },
-  { id: "8", name: "analytics-sdk", owner: "acme-corp", isPrivate: true, language: "JavaScript", stars: 18 },
-]
+  Lock,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
+import type { GitHubRepository } from '@/lib/types/github';
 
 // Default exclude patterns
 const defaultExcludePatterns = [
-  "**/node_modules/**",
-  "**/dist/**",
-  "**/*.min.js",
-  "**/vendor/**",
-  "**/.git/**",
-]
+  '**/node_modules/**',
+  '**/dist/**',
+  '**/*.min.js',
+  '**/vendor/**',
+  '**/.git/**',
+];
 
 // Mock leaderboard preview
 const previewLeaderboard = [
-  { rank: 1, name: "alexchen", loc: "45,892", share: "28.4%" },
-  { rank: 2, name: "sarahdev", loc: "38,241", share: "23.7%" },
-  { rank: 3, name: "mikejohnson", loc: "28,456", share: "17.6%" },
-]
+  { rank: 1, name: 'alexchen', loc: '45,892', share: '28.4%' },
+  { rank: 2, name: 'sarahdev', loc: '38,241', share: '23.7%' },
+  { rank: 3, name: 'mikejohnson', loc: '28,456', share: '17.6%' },
+];
 
 const steps = [
-  { id: 1, title: "Connect GitHub", description: "Authorize read-only access" },
-  { id: 2, title: "Select Repositories", description: "Choose repos to track" },
-  { id: 3, title: "Production Branch", description: "Define your main branch" },
-  { id: 4, title: "Configure Rules", description: "Set counting filters" },
-]
+  { id: 1, title: 'Connect GitHub', description: 'Authorize read-only access' },
+  { id: 2, title: 'Select Repositories', description: 'Choose repos to track' },
+  { id: 3, title: 'Production Branch', description: 'Define your main branch' },
+  { id: 4, title: 'Configure Rules', description: 'Set counting filters' },
+];
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -75,22 +73,24 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           <div className="flex flex-col items-center">
             <div
               className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center font-medium transition-all duration-200",
+                'w-10 h-10 rounded-xl flex items-center justify-center font-medium transition-all duration-200',
                 currentStep === step.id
-                  ? "bg-foreground text-background"
+                  ? 'bg-foreground text-background'
                   : currentStep > step.id
-                  ? "bg-green-500/20 text-green-500 border border-green-500/30"
-                  : "bg-secondary text-muted-foreground",
-                currentStep === step.id && "hover:rounded-none"
-              )}
-            >
+                    ? 'bg-green-500/20 text-green-500 border border-green-500/30'
+                    : 'bg-secondary text-muted-foreground',
+                currentStep === step.id && 'hover:rounded-none',
+              )}>
               {currentStep > step.id ? <Check className="h-5 w-5" /> : step.id}
             </div>
             <div className="mt-2 text-center hidden sm:block">
-              <p className={cn(
-                "text-xs font-medium",
-                currentStep === step.id ? "text-foreground" : "text-muted-foreground"
-              )}>
+              <p
+                className={cn(
+                  'text-xs font-medium',
+                  currentStep === step.id
+                    ? 'text-foreground'
+                    : 'text-muted-foreground',
+                )}>
                 {step.title}
               </p>
             </div>
@@ -98,15 +98,15 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           {index < steps.length - 1 && (
             <div
               className={cn(
-                "w-12 sm:w-24 h-0.5 mx-2",
-                currentStep > step.id ? "bg-green-500/50" : "bg-border"
+                'w-12 sm:w-24 h-0.5 mx-2',
+                currentStep > step.id ? 'bg-green-500/50' : 'bg-border',
               )}
             />
           )}
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 function Step1ConnectGitHub({ onNext }: { onNext: () => void }) {
@@ -118,7 +118,8 @@ function Step1ConnectGitHub({ onNext }: { onNext: () => void }) {
       <div>
         <h2 className="text-2xl font-bold">Connect your GitHub account</h2>
         <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-          ProdLines needs read-only access to analyze your repositories. We never write to your repos or store tokens.
+          ProdLines needs read-only access to analyze your repositories. We
+          never write to your repos or store tokens.
         </p>
       </div>
       <div className="flex flex-col items-center gap-4">
@@ -143,34 +144,85 @@ function Step1ConnectGitHub({ onNext }: { onNext: () => void }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function Step2SelectRepos({ 
-  selectedRepos, 
-  setSelectedRepos, 
-  onNext, 
-  onBack 
-}: { 
-  selectedRepos: string[]
-  setSelectedRepos: (repos: string[]) => void
-  onNext: () => void
-  onBack: () => void 
+function Step2SelectRepos({
+  selectedRepos,
+  setSelectedRepos,
+  onNext,
+  onBack,
+}: {
+  selectedRepos: string[];
+  setSelectedRepos: (repos: string[]) => void;
+  onNext: () => void;
+  onBack: () => void;
 }) {
-  const [search, setSearch] = useState("")
-  
-  const filteredRepos = availableRepos.filter(repo =>
-    repo.name.toLowerCase().includes(search.toLowerCase()) ||
-    repo.owner.toLowerCase().includes(search.toLowerCase())
-  )
+  const [search, setSearch] = useState('');
+  const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleRepo = (repoId: string) => {
+  useEffect(() => {
+    async function fetchRepositories() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch('/api/github/repositories');
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Failed to fetch repositories' }));
+          throw new Error(errorData.error || 'Failed to fetch repositories');
+        }
+
+        const data = await response.json();
+        setRepositories(data.repositories || []);
+      } catch (err) {
+        console.error('Error fetching repositories:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to fetch repositories',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRepositories();
+  }, []);
+
+  const filteredRepos = repositories.filter(
+    (repo) =>
+      repo.name.toLowerCase().includes(search.toLowerCase()) ||
+      repo.owner.toLowerCase().includes(search.toLowerCase()) ||
+      repo.fullName.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const toggleRepo = (repoFullName: string) => {
     setSelectedRepos(
-      selectedRepos.includes(repoId)
-        ? selectedRepos.filter(id => id !== repoId)
-        : [...selectedRepos, repoId]
-    )
-  }
+      selectedRepos.includes(repoFullName)
+        ? selectedRepos.filter((name) => name !== repoFullName)
+        : [...selectedRepos, repoFullName],
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      return `${Math.floor(diffDays / 30)} months ago`;
+    } catch {
+      return dateString;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -192,68 +244,182 @@ function Step2SelectRepos({
         />
       </div>
 
-      {/* Repo list */}
-      <div className="grid gap-2 max-h-80 overflow-y-auto">
-        {filteredRepos.map((repo) => (
-          <div
-            key={repo.id}
-            onClick={() => toggleRepo(repo.id)}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:rounded-none group",
-              selectedRepos.includes(repo.id)
-                ? "bg-secondary border-foreground/20"
-                : "bg-card/50 border-border/50 hover:bg-secondary/50"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <Checkbox 
-                checked={selectedRepos.includes(repo.id)}
-                className="data-[state=checked]:bg-foreground data-[state=checked]:text-background"
-              />
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{repo.owner}/{repo.name}</span>
-                  {repo.isPrivate && (
-                    <Lock className="h-3 w-3 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">{repo.language}</Badge>
-                  <span className="text-xs text-muted-foreground">{repo.stars} stars</span>
-                </div>
+      {/* Error state */}
+      {error && (
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="grid gap-2 max-h-80 overflow-y-auto">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 p-4 rounded-xl border bg-card/50 border-border/50">
+              <Skeleton className="h-4 w-4 rounded" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-32" />
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Repo list */}
+      {!isLoading && !error && (
+        <div className="grid gap-2 max-h-80 overflow-y-auto">
+          {filteredRepos.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No repositories found</p>
+              {search && (
+                <p className="text-sm mt-2">Try a different search term</p>
+              )}
+            </div>
+          ) : (
+            filteredRepos.map((repo) => (
+              <div
+                key={repo.id}
+                onClick={() => toggleRepo(repo.fullName)}
+                className={cn(
+                  'flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:rounded-none group',
+                  selectedRepos.includes(repo.fullName)
+                    ? 'bg-secondary border-foreground/20'
+                    : 'bg-card/50 border-border/50 hover:bg-secondary/50',
+                )}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Checkbox
+                    checked={selectedRepos.includes(repo.fullName)}
+                    className="data-[state=checked]:bg-foreground data-[state=checked]:text-background shrink-0"
+                  />
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={repo.ownerAvatar} alt={repo.owner} />
+                    <AvatarFallback className="text-xs">
+                      {repo.owner.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">
+                        {repo.fullName}
+                      </span>
+                      {repo.private && (
+                        <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {repo.language && (
+                        <Badge variant="outline" className="text-xs">
+                          {repo.language}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {repo.stars} stars
+                      </span>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        {repo.forks} forks
+                      </span>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground">
+                        Updated {formatDate(repo.updatedAt)}
+                      </span>
+                    </div>
+                    {repo.description && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {repo.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Selected count */}
-      <div className="text-center text-sm text-muted-foreground">
-        {selectedRepos.length} {selectedRepos.length === 1 ? "repository" : "repositories"} selected
-      </div>
+      {!isLoading && !error && (
+        <div className="text-center text-sm text-muted-foreground">
+          {selectedRepos.length}{' '}
+          {selectedRepos.length === 1 ? 'repository' : 'repositories'} selected
+          {repositories.length > 0 && (
+            <span className="ml-2">({repositories.length} total)</span>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4">
-        <Button variant="outline" onClick={onBack} className="hover-button bg-transparent">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="hover-button bg-transparent">
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <Button 
-          onClick={onNext} 
-          disabled={selectedRepos.length === 0}
-          className="hover-button"
-        >
-          Continue
-          <ChevronRight className="h-4 w-4 ml-2" />
+        <Button
+          onClick={async () => {
+            if (selectedRepos.length > 0) {
+              try {
+                setIsLoading(true)
+                setError(null)
+                // Save repositories to database
+                const response = await fetch('/api/repositories', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ repositories: selectedRepos }),
+                })
+                
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ error: 'Failed to save repositories' }))
+                  setError(errorData.error || 'Failed to save repositories')
+                  setIsLoading(false)
+                  return
+                }
+                
+                setIsLoading(false)
+                onNext()
+              } catch (err) {
+                console.error('Error saving repositories:', err)
+                setError('Failed to save repositories. Please try again.')
+                setIsLoading(false)
+              }
+            }
+          }}
+          disabled={selectedRepos.length === 0 || isLoading}
+          className="hover-button">
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              Continue
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
-function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const [branch, setBranch] = useState("main")
-  const [useEnvMapping, setUseEnvMapping] = useState(false)
+function Step3ProductionBranch({
+  onNext,
+  onBack,
+}: {
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const [branch, setBranch] = useState('main');
+  const [useEnvMapping, setUseEnvMapping] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -301,11 +467,11 @@ function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack:
           </Select>
         </div>
 
-        {branch === "custom" && (
+        {branch === 'custom' && (
           <div className="space-y-2">
             <Label>Custom branch name</Label>
-            <Input 
-              placeholder="e.g., production, deploy" 
+            <Input
+              placeholder="e.g., production, deploy"
               className="bg-secondary/50"
             />
           </div>
@@ -314,12 +480,14 @@ function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack:
         {/* Environment mapping toggle */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
           <div>
-            <Label htmlFor="env-mapping" className="font-medium">Environment mapping</Label>
+            <Label htmlFor="env-mapping" className="font-medium">
+              Environment mapping
+            </Label>
             <p className="text-xs text-muted-foreground mt-1">
               Track multiple branches for staging/production separation
             </p>
           </div>
-          <Switch 
+          <Switch
             id="env-mapping"
             checked={useEnvMapping}
             onCheckedChange={setUseEnvMapping}
@@ -329,7 +497,9 @@ function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack:
         {useEnvMapping && (
           <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border border-border/50">
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Production</Label>
+              <Label className="text-xs text-muted-foreground">
+                Production
+              </Label>
               <Select defaultValue="main">
                 <SelectTrigger className="hover-button">
                   <SelectValue />
@@ -360,7 +530,10 @@ function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack:
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4">
-        <Button variant="outline" onClick={onBack} className="hover-button bg-transparent">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="hover-button bg-transparent">
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -370,32 +543,41 @@ function Step3ProductionBranch({ onNext, onBack }: { onNext: () => void; onBack:
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
-function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const [excludePatterns, setExcludePatterns] = useState(defaultExcludePatterns)
-  const [includePatterns, setIncludePatterns] = useState<string[]>([])
-  const [newPattern, setNewPattern] = useState("")
-  const [excludeBots, setExcludeBots] = useState(true)
+function Step4ConfigureRules({
+  onNext,
+  onBack,
+}: {
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const [excludePatterns, setExcludePatterns] = useState(
+    defaultExcludePatterns,
+  );
+  const [includePatterns, setIncludePatterns] = useState<string[]>([]);
+  const [newPattern, setNewPattern] = useState('');
+  const [excludeBots, setExcludeBots] = useState(true);
 
   const addExcludePattern = () => {
     if (newPattern && !excludePatterns.includes(newPattern)) {
-      setExcludePatterns([...excludePatterns, newPattern])
-      setNewPattern("")
+      setExcludePatterns([...excludePatterns, newPattern]);
+      setNewPattern('');
     }
-  }
+  };
 
   const removeExcludePattern = (pattern: string) => {
-    setExcludePatterns(excludePatterns.filter(p => p !== pattern))
-  }
+    setExcludePatterns(excludePatterns.filter((p) => p !== pattern));
+  };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold">Configure counting rules</h2>
         <p className="text-muted-foreground mt-2">
-          Customize which files and paths are included in ownership calculations.
+          Customize which files and paths are included in ownership
+          calculations.
         </p>
       </div>
 
@@ -405,16 +587,14 @@ function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: (
           <Label>Exclude patterns</Label>
           <div className="flex flex-wrap gap-2 p-3 rounded-xl bg-secondary/30 border border-border/50 min-h-[60px]">
             {excludePatterns.map((pattern) => (
-              <Badge 
-                key={pattern} 
-                variant="secondary" 
-                className="text-xs flex items-center gap-1 pr-1"
-              >
+              <Badge
+                key={pattern}
+                variant="secondary"
+                className="text-xs flex items-center gap-1 pr-1">
                 <span className="font-mono">{pattern}</span>
-                <button 
-                  onClick={() => removeExcludePattern(pattern)} 
-                  className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center"
-                >
+                <button
+                  onClick={() => removeExcludePattern(pattern)}
+                  className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center">
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
@@ -425,14 +605,13 @@ function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: (
               placeholder="Add pattern, e.g. **/test/**"
               value={newPattern}
               onChange={(e) => setNewPattern(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addExcludePattern()}
+              onKeyDown={(e) => e.key === 'Enter' && addExcludePattern()}
               className="bg-secondary/50 font-mono text-sm"
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={addExcludePattern}
-              className="hover-button bg-transparent"
-            >
+              className="hover-button bg-transparent">
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -458,12 +637,14 @@ function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: (
         {/* Exclude bots toggle */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
           <div>
-            <Label htmlFor="exclude-bots" className="font-medium">Exclude bot contributions</Label>
+            <Label htmlFor="exclude-bots" className="font-medium">
+              Exclude bot contributions
+            </Label>
             <p className="text-xs text-muted-foreground mt-1">
               Filter out dependabot, renovate, and other automated commits
             </p>
           </div>
-          <Switch 
+          <Switch
             id="exclude-bots"
             checked={excludeBots}
             onCheckedChange={setExcludeBots}
@@ -473,7 +654,10 @@ function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: (
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4">
-        <Button variant="outline" onClick={onBack} className="hover-button bg-transparent">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          className="hover-button bg-transparent">
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -483,7 +667,7 @@ function Step4ConfigureRules({ onNext, onBack }: { onNext: () => void; onBack: (
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 function CompletionScreen({ onStart }: { onStart: () => void }) {
@@ -495,7 +679,8 @@ function CompletionScreen({ onStart }: { onStart: () => void }) {
       <div>
         <h2 className="text-2xl font-bold">Setup complete!</h2>
         <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-          Your repositories are configured. Start the first sync to analyze your codebase.
+          Your repositories are configured. Start the first sync to analyze your
+          codebase.
         </p>
       </div>
       <Button size="lg" className="hover-button group" onClick={onStart}>
@@ -504,7 +689,7 @@ function CompletionScreen({ onStart }: { onStart: () => void }) {
         <ChevronRight className="h-5 w-5 ml-1 icon-hover" />
       </Button>
     </div>
-  )
+  );
 }
 
 function LeaderboardPreview() {
@@ -517,17 +702,17 @@ function LeaderboardPreview() {
       <CardContent className="p-0">
         <div className="divide-y divide-border/50">
           {previewLeaderboard.map((item) => (
-            <div 
+            <div
               key={item.rank}
-              className="flex items-center justify-between px-4 py-3"
-            >
+              className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <span className={cn(
-                  "font-bold",
-                  item.rank === 1 && "text-amber-500",
-                  item.rank === 2 && "text-zinc-400",
-                  item.rank === 3 && "text-amber-700"
-                )}>
+                <span
+                  className={cn(
+                    'font-bold',
+                    item.rank === 1 && 'text-amber-500',
+                    item.rank === 2 && 'text-zinc-400',
+                    item.rank === 3 && 'text-amber-700',
+                  )}>
                   #{item.rank}
                 </span>
                 <Avatar className="h-7 w-7">
@@ -546,7 +731,7 @@ function LeaderboardPreview() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function Loading() {
@@ -554,29 +739,29 @@ function Loading() {
 }
 
 export function ReposPage() {
-  const [currentStep, setCurrentStep] = useState(1)
-  const [selectedRepos, setSelectedRepos] = useState<string[]>([])
-  const [isComplete, setIsComplete] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
+  const [isComplete, setIsComplete] = useState(false);
   const searchParams = useSearchParams();
 
   const handleNext = () => {
     if (currentStep < 4) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(currentStep + 1);
     } else {
-      setIsComplete(true)
+      setIsComplete(true);
     }
-  }
+  };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      setCurrentStep(currentStep - 1);
     }
-  }
+  };
 
   const handleStart = () => {
     // Mock sync start - would redirect to overview
-    window.location.href = "/app/overview"
-  }
+    window.location.href = '/app/overview';
+  };
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -586,12 +771,14 @@ export function ReposPage() {
           <Card className="hover-card bg-card/50 border-border/50">
             <CardContent className="p-6 sm:p-8">
               {!isComplete && <StepIndicator currentStep={currentStep} />}
-              
+
               {isComplete ? (
                 <CompletionScreen onStart={handleStart} />
               ) : (
                 <>
-                  {currentStep === 1 && <Step1ConnectGitHub onNext={handleNext} />}
+                  {currentStep === 1 && (
+                    <Step1ConnectGitHub onNext={handleNext} />
+                  )}
                   {currentStep === 2 && (
                     <Step2SelectRepos
                       selectedRepos={selectedRepos}
@@ -601,10 +788,16 @@ export function ReposPage() {
                     />
                   )}
                   {currentStep === 3 && (
-                    <Step3ProductionBranch onNext={handleNext} onBack={handleBack} />
+                    <Step3ProductionBranch
+                      onNext={handleNext}
+                      onBack={handleBack}
+                    />
                   )}
                   {currentStep === 4 && (
-                    <Step4ConfigureRules onNext={handleNext} onBack={handleBack} />
+                    <Step4ConfigureRules
+                      onNext={handleNext}
+                      onBack={handleBack}
+                    />
                   )}
                 </>
               )}
@@ -618,6 +811,5 @@ export function ReposPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

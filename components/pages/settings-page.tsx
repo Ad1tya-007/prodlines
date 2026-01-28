@@ -1,20 +1,19 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
+import { useState } from 'react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,39 +24,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { 
-  Building2, 
-  CreditCard, 
-  Webhook, 
+} from '@/components/ui/alert-dialog';
+import {
+  Building2,
+  CreditCard,
+  Webhook,
   AlertTriangle,
   Check,
   Copy,
   ExternalLink,
   Users,
   RefreshCw,
-  Trash2
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+  Trash2,
+} from 'lucide-react';
 
 export function SettingsPage() {
-  const [orgName, setOrgName] = useState("Acme Corp")
-  const [autoSync, setAutoSync] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [slackNotifications, setSlackNotifications] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [orgName, setOrgName] = useState('Acme Corp');
+  const [autoSync, setAutoSync] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [slackNotifications, setSlackNotifications] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleCopyWebhook = () => {
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your organization and account settings</p>
+        <p className="text-muted-foreground">
+          Manage your organization and account settings
+        </p>
       </div>
 
       {/* Organization Settings */}
@@ -69,31 +69,33 @@ export function SettingsPage() {
             </div>
             <div>
               <CardTitle>Organization</CardTitle>
-              <CardDescription>Manage your organization settings</CardDescription>
+              <CardDescription>
+                Manage your organization settings
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="org-name">Organization name</Label>
-            <Input 
+            <Input
               id="org-name"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               className="max-w-sm bg-secondary/50"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="org-slug">Organization slug</Label>
             <div className="flex items-center gap-2 max-w-sm">
-              <Input 
+              <Input
                 id="org-slug"
                 value="acme-corp"
                 disabled
                 className="bg-secondary/50 text-muted-foreground"
               />
-              <Badge variant="secondary" className="flex-shrink-0">
+              <Badge variant="secondary" className="shrink-0">
                 <Check className="h-3 w-3 mr-1" />
                 Verified
               </Badge>
@@ -110,7 +112,7 @@ export function SettingsPage() {
                   Automatically sync when new commits are pushed
                 </p>
               </div>
-              <Switch 
+              <Switch
                 id="auto-sync"
                 checked={autoSync}
                 onCheckedChange={setAutoSync}
@@ -124,7 +126,7 @@ export function SettingsPage() {
                   Get weekly ownership reports via email
                 </p>
               </div>
-              <Switch 
+              <Switch
                 id="email-notif"
                 checked={emailNotifications}
                 onCheckedChange={setEmailNotifications}
@@ -138,7 +140,7 @@ export function SettingsPage() {
                   Send updates to your Slack workspace
                 </p>
               </div>
-              <Switch 
+              <Switch
                 id="slack-notif"
                 checked={slackNotifications}
                 onCheckedChange={setSlackNotifications}
@@ -147,9 +149,7 @@ export function SettingsPage() {
           </div>
 
           <div className="pt-2">
-            <Button className="hover-button">
-              Save changes
-            </Button>
+            <Button className="hover-button">Save changes</Button>
           </div>
         </CardContent>
       </Card>
@@ -163,7 +163,9 @@ export function SettingsPage() {
             </div>
             <div className="flex-1">
               <CardTitle>Billing</CardTitle>
-              <CardDescription>Manage your subscription and billing</CardDescription>
+              <CardDescription>
+                Manage your subscription and billing
+              </CardDescription>
             </div>
             <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
               Pro Plan
@@ -191,10 +193,15 @@ export function SettingsPage() {
               <Users className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Team seats</p>
-                <p className="text-sm text-muted-foreground">8 of 10 seats used</p>
+                <p className="text-sm text-muted-foreground">
+                  8 of 10 seats used
+                </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="hover-button bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hover-button bg-transparent">
               Add seats
             </Button>
           </div>
@@ -220,7 +227,9 @@ export function SettingsPage() {
             </div>
             <div className="flex-1">
               <CardTitle>Webhook</CardTitle>
-              <CardDescription>GitHub webhook integration status</CardDescription>
+              <CardDescription>
+                GitHub webhook integration status
+              </CardDescription>
             </div>
             <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
@@ -232,18 +241,21 @@ export function SettingsPage() {
           <div className="space-y-2">
             <Label>Webhook URL</Label>
             <div className="flex items-center gap-2">
-              <Input 
+              <Input
                 value="https://api.prodlines.io/webhooks/github/acme-corp"
                 readOnly
                 className="font-mono text-sm bg-secondary/50"
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={handleCopyWebhook}
-                className="hover-button flex-shrink-0 bg-transparent"
-              >
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                className="hover-button shrink-0 bg-transparent">
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -252,12 +264,16 @@ export function SettingsPage() {
             <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
               <p className="text-sm text-muted-foreground">Last delivery</p>
               <p className="font-medium mt-1">2 minutes ago</p>
-              <Badge variant="outline" className="mt-2 text-green-500 border-green-500/30">
+              <Badge
+                variant="outline"
+                className="mt-2 text-green-500 border-green-500/30">
                 200 OK
               </Badge>
             </div>
             <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">Events received (24h)</p>
+              <p className="text-sm text-muted-foreground">
+                Events received (24h)
+              </p>
               <p className="font-medium mt-1">147 events</p>
               <Badge variant="outline" className="mt-2">
                 push, pull_request
@@ -281,7 +297,9 @@ export function SettingsPage() {
             </div>
             <div>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>Irreversible and destructive actions</CardDescription>
+              <CardDescription>
+                Irreversible and destructive actions
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -295,7 +313,9 @@ export function SettingsPage() {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
+                <Button
+                  variant="outline"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Disconnect
                 </Button>
@@ -304,12 +324,15 @@ export function SettingsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently disconnect all your repositories 
-                    and delete all associated ownership data.
+                    This action cannot be undone. This will permanently
+                    disconnect all your repositories and delete all associated
+                    ownership data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="hover-button">Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="hover-button">
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button">
                     Yes, disconnect all
                   </AlertDialogAction>
@@ -327,7 +350,9 @@ export function SettingsPage() {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
+                <Button
+                  variant="outline"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -336,13 +361,15 @@ export function SettingsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete organization?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the organization 
-                    &quot;{orgName}&quot; and all associated data including repositories, leaderboards, 
-                    and team members.
+                    This action cannot be undone. This will permanently delete
+                    the organization &quot;{orgName}&quot; and all associated
+                    data including repositories, leaderboards, and team members.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel className="hover-button">Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="hover-button">
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button">
                     Yes, delete organization
                   </AlertDialogAction>
@@ -353,5 +380,5 @@ export function SettingsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -4,7 +4,7 @@ import React from 'react';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,7 +46,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockRepos } from '@/lib/mock-data';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
@@ -54,21 +53,29 @@ import {
   type Profile,
 } from '@/lib/supabase/profiles-client';
 
-const navItems = [
-  { href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/app/repos', icon: GitBranch, label: 'Repos' },
-  { href: '/app/leaderboard/1', icon: Trophy, label: 'Leaderboards' },
-  { href: '/app/settings', icon: Settings, label: 'Settings' },
-];
-
 function Sidebar({
   collapsed,
   setCollapsed,
+  currentRepo,
 }: {
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
+  currentRepo?: string;
 }) {
   const pathname = usePathname();
+  
+  // Build nav items with dynamic leaderboard link
+  const navItems = [
+    { id: 'overview', href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
+    { 
+      id: 'leaderboards',
+      href: currentRepo ? `/app/leaderboard/${encodeURIComponent(currentRepo)}` : '/app/repos', 
+      icon: Trophy, 
+      label: 'Leaderboards' 
+    },
+    { id: 'settings', href: '/app/settings', icon: Settings, label: 'Settings' },
+  ];
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -107,7 +114,7 @@ function Sidebar({
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + '/');
               return collapsed ? (
-                <Tooltip key={item.href}>
+                <Tooltip key={item.id}>
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
@@ -126,7 +133,7 @@ function Sidebar({
                 </Tooltip>
               ) : (
                 <Link
-                  key={item.href}
+                  key={item.id}
                   href={item.href}
                   className={cn(
                     'flex items-center gap-3 px-3 h-10 rounded-xl transition-all duration-200 hover:rounded-none group',
@@ -164,8 +171,21 @@ function Sidebar({
   );
 }
 
-function MobileNav() {
+function MobileNav({ currentRepo }: { currentRepo?: string }) {
   const pathname = usePathname();
+  
+  // Build nav items with dynamic leaderboard link
+  const navItems = [
+    { id: 'overview', href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
+    { 
+      id: 'leaderboards',
+      href: currentRepo ? `/app/leaderboard/${encodeURIComponent(currentRepo)}` : '/app/repos', 
+      icon: Trophy, 
+      label: 'Leaderboards' 
+    },
+    { id: 'settings', href: '/app/settings', icon: Settings, label: 'Settings' },
+  ];
 
   return (
     <Sheet>
@@ -189,7 +209,7 @@ function MobileNav() {
               pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 px-3 h-10 rounded-xl transition-all duration-200 hover:rounded-none',
@@ -212,14 +232,55 @@ function TopBar({
   sidebarCollapsed,
   user,
   profile,
+  currentRepo,
 }: {
   sidebarCollapsed: boolean;
   user: SupabaseUser | null;
   profile: Profile | null;
+  currentRepo?: string;
 }) {
   const [syncing, setSyncing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [repositories, setRepositories] = useState<Array<{ id: string; full_name: string; owner: string; name: string }>>([]);
+  const [reposLoading, setReposLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Fetch user's repositories
+  useEffect(() => {
+    async function fetchRepositories() {
+      try {
+        const response = await fetch('/api/repositories');
+        if (response.ok) {
+          const data = await response.json();
+          setRepositories(data.repositories || []);
+        }
+      } catch (error) {
+        console.error('Error fetching repositories:', error);
+      } finally {
+        setReposLoading(false);
+      }
+    }
+    fetchRepositories();
+  }, []);
+
+  // Get current repo from URL
+  const getCurrentRepo = () => {
+    if (pathname === '/app/overview') {
+      const repoParam = searchParams.get('repo');
+      if (repoParam) {
+        return repoParam;
+      }
+    }
+    // Return first repo as default if available
+    return repositories.length > 0 ? repositories[0].full_name : '';
+  };
+
+  const handleRepoChange = (fullName: string) => {
+    router.push(`/app/overview?repo=${encodeURIComponent(fullName)}`);
+  };
 
   const handleSync = () => {
     setSyncing(true);
@@ -289,26 +350,39 @@ function TopBar({
       )}>
       <div className="flex items-center justify-between h-full px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <MobileNav />
+          <MobileNav currentRepo={currentRepo} />
 
           {/* Repo selector */}
-          <Select defaultValue="1">
-            <SelectTrigger className="w-48 md:w-56 hover-button bg-secondary/50 border-border/50">
-              <SelectValue placeholder="Select repository" />
-            </SelectTrigger>
-            <SelectContent>
-              {mockRepos.map((repo) => (
-                <SelectItem key={repo.id} value={repo.id}>
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {repo.owner}/{repo.name}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {reposLoading ? (
+            <div className="w-48 md:w-56 h-10 bg-secondary/50 border border-border/50 rounded-md animate-pulse" />
+          ) : repositories.length > 0 ? (
+            <Select value={getCurrentRepo()} onValueChange={handleRepoChange}>
+              <SelectTrigger className="w-48 md:w-56 hover-button bg-secondary/50 border-border/50">
+                <SelectValue placeholder="Select repository" />
+              </SelectTrigger>
+              <SelectContent>
+                {repositories.map((repo) => (
+                  <SelectItem key={repo.id} value={repo.full_name}>
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      <span>{repo.full_name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="hover-button bg-transparent">
+              <Link href="/app/repos">
+                <GitBranch className="h-4 w-4 mr-2" />
+                Connect Repository
+              </Link>
+            </Button>
+          )}
 
           {/* Search */}
           <div className="relative hidden md:block">
@@ -411,7 +485,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [currentRepo, setCurrentRepo] = useState<string>('');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Get current repository from URL or fetch first repo
+  useEffect(() => {
+    async function getCurrentRepository() {
+      // Check if we're on overview page with repo param
+      if (pathname === '/app/overview') {
+        const repoParam = searchParams.get('repo');
+        if (repoParam) {
+          setCurrentRepo(repoParam);
+          return;
+        }
+      }
+      
+      // Check if we're on leaderboard page - extract repo from URL
+      if (pathname.startsWith('/app/leaderboard/')) {
+        const repoId = pathname.split('/app/leaderboard/')[1];
+        if (repoId) {
+          // Decode the repo ID (it's URL encoded)
+          const decodedRepo = decodeURIComponent(repoId);
+          setCurrentRepo(decodedRepo);
+          return;
+        }
+      }
+      
+      // Fetch first repository as default
+      try {
+        const response = await fetch('/api/repositories');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.repositories && data.repositories.length > 0) {
+            setCurrentRepo(data.repositories[0].full_name);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching repositories:', error);
+      }
+    }
+    
+    getCurrentRepository();
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     // Get initial user and profile
@@ -445,12 +562,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
+          currentRepo={currentRepo}
         />
       </div>
       <TopBar
         sidebarCollapsed={sidebarCollapsed}
         user={user}
         profile={profile}
+        currentRepo={currentRepo}
       />
       <main
         className={cn(

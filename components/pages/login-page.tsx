@@ -25,6 +25,7 @@ export function LoginPage() {
       provider: 'github',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
+        scopes: 'read:user user:email repo', // Request repo scope for repository access
       },
     })
 

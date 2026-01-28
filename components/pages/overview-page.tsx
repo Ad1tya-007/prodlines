@@ -1,84 +1,65 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  Code2, 
-  Users, 
-  Clock, 
-  FileX, 
-  TrendingUp, 
-  TrendingDown, 
+} from '@/components/ui/select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Code2,
+  Users,
+  Clock,
+  FileX,
+  TrendingUp,
+  TrendingDown,
   Minus,
   X,
   Plus,
   Info,
   GitBranch,
-  ChevronRight
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { mockContributors, kpiData } from "@/lib/mock-data"
-
-// KPI Cards
-const kpiCards = [
-  {
-    title: "Production LOC",
-    value: kpiData.productionLOC.toLocaleString(),
-    description: "Lines in production",
-    icon: Code2,
-    trend: "+2.3%",
-    trendUp: true,
-  },
-  {
-    title: "Active Contributors",
-    value: kpiData.activeContributors.toString(),
-    description: "This month",
-    icon: Users,
-    trend: "+1",
-    trendUp: true,
-  },
-  {
-    title: "Last Sync",
-    value: kpiData.lastSync,
-    description: "Auto-sync enabled",
-    icon: Clock,
-    trend: null,
-    trendUp: null,
-  },
-  {
-    title: "Excluded LOC",
-    value: kpiData.excludedLOC.toLocaleString(),
-    description: "Tests, docs, generated",
-    icon: FileX,
-    trend: "-5.1%",
-    trendUp: false,
-  },
-]
+  ChevronRight,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type {
+  GitHubStats,
+  GitHubContributor,
+  KPICard,
+} from '@/lib/types/github';
 
 // Filter chips
-const defaultExcludes = ["**/node_modules/**", "**/dist/**", "**/*.min.js", "**/vendor/**"]
-const defaultIncludes = ["src/**", "lib/**", "components/**"]
+const defaultExcludes = [
+  '**/node_modules/**',
+  '**/dist/**',
+  '**/*.min.js',
+  '**/vendor/**',
+];
+const defaultIncludes = ['src/**', 'lib/**', 'components/**'];
 
-function KPICard({ card, index }: { card: typeof kpiCards[0]; index: number }) {
+function KPICard({ card, index }: { card: KPICard; index: number }) {
   return (
-    <Card 
+    <Card
       className="hover-card group bg-card/50 border-border/50 opacity-0 animate-fade-in"
-      style={{ animationDelay: `${index * 100}ms`, animationFillMode: "forwards" }}
-    >
+      style={{
+        animationDelay: `${index * 100}ms`,
+        animationFillMode: 'forwards',
+      }}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {card.title}
@@ -92,21 +73,26 @@ function KPICard({ card, index }: { card: typeof kpiCards[0]; index: number }) {
         <div className="flex items-center justify-between mt-1">
           <p className="text-xs text-muted-foreground">{card.description}</p>
           {card.trend && (
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={cn(
-                "text-xs",
-                card.trendUp ? "text-green-500 border-green-500/30" : "text-red-500 border-red-500/30"
+                'text-xs',
+                card.trendUp
+                  ? 'text-green-500 border-green-500/30'
+                  : 'text-red-500 border-red-500/30',
+              )}>
+              {card.trendUp ? (
+                <TrendingUp className="h-3 w-3 mr-1" />
+              ) : (
+                <TrendingDown className="h-3 w-3 mr-1" />
               )}
-            >
-              {card.trendUp ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
               {card.trend}
             </Badge>
           )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function KPICardSkeleton() {
@@ -121,36 +107,41 @@ function KPICardSkeleton() {
         <Skeleton className="h-3 w-32" />
       </CardContent>
     </Card>
-  )
+  );
 }
 
-function LeaderboardRow({ contributor, rank }: { contributor: typeof mockContributors[0]; rank: number }) {
-  const isTopThree = rank <= 3
-  
+function LeaderboardRow({
+  contributor,
+  rank,
+}: {
+  contributor: GitHubContributor;
+  rank: number;
+}) {
+  const isTopThree = rank <= 3;
+
   return (
     <Link
       href={`/app/leaderboard/1?contributor=${contributor.id}`}
-      className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none"
-    >
+      className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none">
       <div className="flex items-center gap-4">
-        <span 
+        <span
           className={cn(
-            "w-8 text-center font-bold text-lg",
-            rank === 1 && "text-amber-500",
-            rank === 2 && "text-zinc-400",
-            rank === 3 && "text-amber-700",
-            rank > 3 && "text-muted-foreground"
-          )}
-        >
+            'w-8 text-center font-bold text-lg',
+            rank === 1 && 'text-amber-500',
+            rank === 2 && 'text-zinc-400',
+            rank === 3 && 'text-amber-700',
+            rank > 3 && 'text-muted-foreground',
+          )}>
           {rank}
         </span>
-        <Avatar className={cn(
-          "h-9 w-9 transition-all duration-200",
-          isTopThree ? "ring-2 ring-offset-2 ring-offset-background" : "",
-          rank === 1 && "ring-amber-500",
-          rank === 2 && "ring-zinc-400",
-          rank === 3 && "ring-amber-700"
-        )}>
+        <Avatar
+          className={cn(
+            'h-9 w-9 transition-all duration-200',
+            isTopThree ? 'ring-2 ring-offset-2 ring-offset-background' : '',
+            rank === 1 && 'ring-amber-500',
+            rank === 2 && 'ring-zinc-400',
+            rank === 3 && 'ring-amber-700',
+          )}>
           <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
             {contributor.username.slice(0, 2).toUpperCase()}
           </AvatarFallback>
@@ -159,14 +150,16 @@ function LeaderboardRow({ contributor, rank }: { contributor: typeof mockContrib
           <p className="font-medium">{contributor.username}</p>
           {isTopThree && (
             <p className="text-xs text-muted-foreground">
-              {contributor.topFiles[0]?.split("/").pop()}
+              {contributor.topFiles[0]?.split('/').pop()}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center gap-6">
         <div className="text-right hidden sm:block">
-          <p className="font-mono text-sm">{contributor.productionLOC.toLocaleString()}</p>
+          <p className="font-mono text-sm">
+            {contributor.productionLOC.toLocaleString()}
+          </p>
           <p className="text-xs text-muted-foreground">LOC</p>
         </div>
         <div className="w-16 text-right">
@@ -175,26 +168,30 @@ function LeaderboardRow({ contributor, rank }: { contributor: typeof mockContrib
           </Badge>
         </div>
         <div className="w-16 flex items-center justify-end gap-1">
-          {contributor.trend === "up" && (
+          {contributor.trend === 'up' && (
             <>
               <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-green-500">+{contributor.trendValue}%</span>
+              <span className="text-xs text-green-500">
+                +{contributor.trendValue}%
+              </span>
             </>
           )}
-          {contributor.trend === "down" && (
+          {contributor.trend === 'down' && (
             <>
               <TrendingDown className="h-4 w-4 text-red-500" />
-              <span className="text-xs text-red-500">-{contributor.trendValue}%</span>
+              <span className="text-xs text-red-500">
+                -{contributor.trendValue}%
+              </span>
             </>
           )}
-          {contributor.trend === "neutral" && (
+          {contributor.trend === 'neutral' && (
             <Minus className="h-4 w-4 text-muted-foreground" />
           )}
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </Link>
-  )
+  );
 }
 
 function LeaderboardSkeleton() {
@@ -215,23 +212,28 @@ function LeaderboardSkeleton() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
-function FilterChip({ label, onRemove }: { label: string; onRemove?: () => void }) {
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove?: () => void;
+}) {
   return (
     <Badge variant="secondary" className="text-xs flex items-center gap-1 pr-1">
       <span className="font-mono">{label}</span>
       {onRemove && (
-        <button 
-          onClick={onRemove} 
-          className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center"
-        >
+        <button
+          onClick={onRemove}
+          className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center">
           <X className="h-3 w-3" />
         </button>
       )}
     </Badge>
-  )
+  );
 }
 
 function EmptyState() {
@@ -253,21 +255,151 @@ function EmptyState() {
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export function OverviewPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [showEmpty, setShowEmpty] = useState(false)
-  const [excludeBots, setExcludeBots] = useState(true)
-  const [excludeTests, setExcludeTests] = useState(true)
-  const [excludeDocs, setExcludeDocs] = useState(true)
+interface OverviewPageProps {
+  stats: GitHubStats | null;
+  isLoading?: boolean;
+  error?: string | null;
+  repoOwner?: string;
+  repoName?: string;
+}
 
-  // Simulate loading for demo
-  const triggerLoading = () => {
-    setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1500)
-  }
+export function OverviewPage({
+  stats,
+  isLoading: externalLoading = false,
+  error,
+  repoOwner = 'acme-corp',
+  repoName = 'frontend-app',
+}: OverviewPageProps) {
+  const [isLoading, setIsLoading] = useState(externalLoading);
+  const [showEmpty, setShowEmpty] = useState(false);
+  const [excludeBots, setExcludeBots] = useState(true);
+  const [excludeTests, setExcludeTests] = useState(true);
+  const [excludeDocs, setExcludeDocs] = useState(true);
+  const [lastSyncFormatted, setLastSyncFormatted] = useState<string>('Just now');
+
+  // Format last sync time (client-side only to avoid hydration mismatch)
+  const formatLastSync = (lastSync: string) => {
+    try {
+      const date = new Date(lastSync);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60)
+        return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24)
+        return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    } catch {
+      return lastSync;
+    }
+  };
+
+  // Update formatted time on client side only (after hydration)
+  useEffect(() => {
+    if (stats?.lastSync) {
+      setLastSyncFormatted(formatLastSync(stats.lastSync));
+      // Update every minute to keep it fresh
+      const interval = setInterval(() => {
+        setLastSyncFormatted(formatLastSync(stats.lastSync));
+      }, 60000);
+      return () => clearInterval(interval);
+    } else {
+      setLastSyncFormatted('Never');
+    }
+  }, [stats?.lastSync]);
+
+  // Create KPI cards from stats
+  const kpiCards: KPICard[] = stats
+    ? [
+        {
+          title: 'Production LOC',
+          value: stats.productionLOC.toLocaleString(),
+          description: 'Lines in production',
+          icon: Code2,
+          trend: '+2.3%',
+          trendUp: true,
+        },
+        {
+          title: 'Active Contributors',
+          value: stats.activeContributors.toString(),
+          description: 'This month',
+          icon: Users,
+          trend: '+1',
+          trendUp: true,
+        },
+        {
+          title: 'Last Sync',
+          value: lastSyncFormatted,
+          description: 'Auto-sync enabled',
+          icon: Clock,
+          trend: null,
+          trendUp: null,
+        },
+        {
+          title: 'Excluded LOC',
+          value: stats.excludedLOC.toLocaleString(),
+          description: 'Tests, docs, generated',
+          icon: FileX,
+          trend: '-5.1%',
+          trendUp: false,
+        },
+      ]
+    : [];
+
+  const displayLoading = isLoading || externalLoading;
+  const displayStats =
+    stats && !showEmpty && !error && stats.contributors.length > 0;
+
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null)
+  const [savedRepos, setSavedRepos] = useState<Array<{ id: string; full_name: string; owner: string; name: string; default_branch: string }>>([])
+  const [reposLoading, setReposLoading] = useState(true)
+
+  // Fetch saved repositories on mount
+  useEffect(() => {
+    async function fetchSavedRepos() {
+      try {
+        const response = await fetch('/api/repositories')
+        if (response.ok) {
+          const data = await response.json()
+          setSavedRepos(data.repositories || [])
+          // Set current repo from URL or first repo as selected
+          const currentRepoFullName = `${repoOwner}/${repoName}`
+          const matchingRepo = data.repositories?.find((r: any) => r.full_name === currentRepoFullName)
+          if (matchingRepo) {
+            setSelectedRepo(matchingRepo.full_name)
+          } else if (data.repositories && data.repositories.length > 0 && !selectedRepo) {
+            const firstRepo = data.repositories[0]
+            setSelectedRepo(firstRepo.full_name)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching saved repositories:', error)
+      } finally {
+        setReposLoading(false)
+      }
+    }
+    fetchSavedRepos()
+  }, [repoOwner, repoName])
+
+  // Update stats when repository changes
+  useEffect(() => {
+    if (selectedRepo && savedRepos.length > 0) {
+      const repo = savedRepos.find(r => r.full_name === selectedRepo)
+      if (repo && selectedRepo !== `${repoOwner}/${repoName}`) {
+        // Trigger a page reload to fetch new stats
+        window.location.href = `/app/overview?repo=${encodeURIComponent(selectedRepo)}`
+      }
+    }
+  }, [selectedRepo, savedRepos, repoOwner, repoName])
+
+  const currentRepo = savedRepos.find(r => r.full_name === selectedRepo) || savedRepos.find(r => r.full_name === `${repoOwner}/${repoName}`)
 
   return (
     <div className="space-y-6">
@@ -275,25 +407,73 @@ export function OverviewPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Overview</h1>
-          <p className="text-muted-foreground">Production code ownership for acme-corp/frontend-app</p>
+          {reposLoading ? (
+            <p className="text-muted-foreground">Loading repositories...</p>
+          ) : savedRepos.length > 0 ? (
+            <div className="flex items-center gap-2 mt-1">
+              <Select
+                value={selectedRepo || ''}
+                onValueChange={setSelectedRepo}
+              >
+                <SelectTrigger className="w-auto min-w-[200px] hover-button bg-transparent">
+                  <SelectValue placeholder="Select repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  {savedRepos.map((repo) => (
+                    <SelectItem key={repo.id} value={repo.full_name}>
+                      {repo.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {savedRepos.length === 0 && (
+                <p className="text-muted-foreground text-sm">
+                  Production code ownership for {repoOwner}/{repoName}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              Production code ownership for {currentRepo ? currentRepo.full_name : `${repoOwner}/${repoName}`}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={triggerLoading} className="hover-button bg-transparent">
-            {isLoading ? "Loading..." : "Refresh"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowEmpty(!showEmpty)} className="hover-button">
-            {showEmpty ? "Show Data" : "Show Empty"}
+          {savedRepos.length === 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="hover-button bg-transparent"
+            >
+              <Link href="/app/repos">Connect Repository</Link>
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="hover-button bg-transparent">
+            {displayLoading ? 'Loading...' : 'Refresh'}
           </Button>
         </div>
       </div>
 
-      {showEmpty ? (
+      {error && (
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="p-4">
+            <p className="text-destructive text-sm">{error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {showEmpty || (!stats && !displayLoading) ? (
         <EmptyState />
-      ) : (
+      ) : displayStats ? (
         <>
           {/* KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {isLoading
+            {displayLoading
               ? [...Array(4)].map((_, i) => <KPICardSkeleton key={i} />)
               : kpiCards.map((card, index) => (
                   <KPICard key={card.title} card={card} index={index} />
@@ -303,14 +483,22 @@ export function OverviewPage() {
           {/* Main content grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Leaderboard - takes 2 columns */}
-            <Card className="lg:col-span-2 hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-200" style={{ animationFillMode: "forwards" }}>
+            <Card
+              className="lg:col-span-2 hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-200"
+              style={{ animationFillMode: 'forwards' }}>
               <CardHeader className="border-b border-border/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Leaderboard</CardTitle>
-                    <CardDescription>Production LOC ownership ranking</CardDescription>
+                    <CardDescription>
+                      Production LOC ownership ranking
+                    </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="hover-button bg-transparent" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hover-button bg-transparent"
+                    asChild>
                     <Link href="/app/leaderboard/1">
                       View all
                       <ChevronRight className="h-4 w-4 ml-1" />
@@ -319,17 +507,19 @@ export function OverviewPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                {isLoading ? (
+                {displayLoading ? (
                   <LeaderboardSkeleton />
                 ) : (
                   <div className="divide-y divide-border/50">
-                    {mockContributors.slice(0, 8).map((contributor, index) => (
-                      <LeaderboardRow 
-                        key={contributor.id} 
-                        contributor={contributor} 
-                        rank={index + 1} 
-                      />
-                    ))}
+                    {stats.contributors
+                      .slice(0, 8)
+                      .map((contributor, index) => (
+                        <LeaderboardRow
+                          key={contributor.id}
+                          contributor={contributor}
+                          rank={index + 1}
+                        />
+                      ))}
                   </div>
                 )}
               </CardContent>
@@ -338,7 +528,9 @@ export function OverviewPage() {
             {/* Right sidebar - filters and definitions */}
             <div className="space-y-6">
               {/* Filters */}
-              <Card className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-300" style={{ animationFillMode: "forwards" }}>
+              <Card
+                className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-300"
+                style={{ animationFillMode: 'forwards' }}>
                 <CardHeader>
                   <CardTitle className="text-base">Filters</CardTitle>
                   <CardDescription>Configure counting rules</CardDescription>
@@ -346,12 +538,21 @@ export function OverviewPage() {
                 <CardContent className="space-y-4">
                   {/* Exclude patterns */}
                   <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">Exclude paths</Label>
+                    <Label className="text-xs text-muted-foreground mb-2 block">
+                      Exclude paths
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {defaultExcludes.map((pattern) => (
-                        <FilterChip key={pattern} label={pattern} onRemove={() => {}} />
+                        <FilterChip
+                          key={pattern}
+                          label={pattern}
+                          onRemove={() => {}}
+                        />
                       ))}
-                      <Button variant="ghost" size="sm" className="h-6 text-xs hover-button">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs hover-button">
                         <Plus className="h-3 w-3 mr-1" />
                         Add
                       </Button>
@@ -360,17 +561,25 @@ export function OverviewPage() {
 
                   {/* Include patterns */}
                   <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">Include paths</Label>
+                    <Label className="text-xs text-muted-foreground mb-2 block">
+                      Include paths
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {defaultIncludes.map((pattern) => (
-                        <FilterChip key={pattern} label={pattern} onRemove={() => {}} />
+                        <FilterChip
+                          key={pattern}
+                          label={pattern}
+                          onRemove={() => {}}
+                        />
                       ))}
                     </div>
                   </div>
 
                   {/* File type filter */}
                   <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">File types</Label>
+                    <Label className="text-xs text-muted-foreground mb-2 block">
+                      File types
+                    </Label>
                     <Select defaultValue="all">
                       <SelectTrigger className="hover-button">
                         <SelectValue />
@@ -388,25 +597,31 @@ export function OverviewPage() {
                   {/* Toggle options */}
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-tests" className="text-sm">Exclude tests</Label>
-                      <Switch 
-                        id="exclude-tests" 
+                      <Label htmlFor="exclude-tests" className="text-sm">
+                        Exclude tests
+                      </Label>
+                      <Switch
+                        id="exclude-tests"
                         checked={excludeTests}
                         onCheckedChange={setExcludeTests}
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-docs" className="text-sm">Exclude docs</Label>
-                      <Switch 
-                        id="exclude-docs" 
+                      <Label htmlFor="exclude-docs" className="text-sm">
+                        Exclude docs
+                      </Label>
+                      <Switch
+                        id="exclude-docs"
                         checked={excludeDocs}
                         onCheckedChange={setExcludeDocs}
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-bots" className="text-sm">Exclude bots</Label>
-                      <Switch 
-                        id="exclude-bots" 
+                      <Label htmlFor="exclude-bots" className="text-sm">
+                        Exclude bots
+                      </Label>
+                      <Switch
+                        id="exclude-bots"
                         checked={excludeBots}
                         onCheckedChange={setExcludeBots}
                       />
@@ -416,7 +631,9 @@ export function OverviewPage() {
               </Card>
 
               {/* Definitions */}
-              <Card className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-400" style={{ animationFillMode: "forwards" }}>
+              <Card
+                className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-400"
+                style={{ animationFillMode: 'forwards' }}>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Info className="h-4 w-4" />
@@ -427,13 +644,15 @@ export function OverviewPage() {
                   <div>
                     <p className="font-medium">Production LOC</p>
                     <p className="text-muted-foreground text-xs">
-                      Lines of code in the default branch that have been merged via pull request.
+                      Lines of code in the default branch that have been merged
+                      via pull request.
                     </p>
                   </div>
                   <div>
                     <p className="font-medium">Ownership</p>
                     <p className="text-muted-foreground text-xs">
-                      Based on git blame. The last person to modify a line owns it.
+                      Based on git blame. The last person to modify a line owns
+                      it.
                     </p>
                   </div>
                   <div>
@@ -447,7 +666,7 @@ export function OverviewPage() {
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </div>
-  )
+  );
 }
