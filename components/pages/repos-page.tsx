@@ -40,6 +40,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
+import {
+  useGitHubRepositories,
+  useSaveRepositories,
+} from '@/lib/hooks/use-repositories';
 import type { GitHubRepository } from '@/lib/types/github';
 
 // Default exclude patterns
@@ -159,38 +163,18 @@ function Step2SelectRepos({
   onBack: () => void;
 }) {
   const [search, setSearch] = useState('');
-  const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchRepositories() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch('/api/github/repositories');
+  // Use React Query to fetch repositories
+  const {
+    data: repositories = [],
+    isLoading,
+    error: queryError,
+  } = useGitHubRepositories();
 
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ error: 'Failed to fetch repositories' }));
-          throw new Error(errorData.error || 'Failed to fetch repositories');
-        }
+  const error = queryError ? (queryError as Error).message : null;
 
-        const data = await response.json();
-        setRepositories(data.repositories || []);
-      } catch (err) {
-        console.error('Error fetching repositories:', err);
-        setError(
-          err instanceof Error ? err.message : 'Failed to fetch repositories',
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchRepositories();
-  }, []);
+  // Use mutation for saving repositories
+  const saveReposMutation = useSaveRepositories();
 
   const filteredRepos = repositories.filter(
     (repo) =>
@@ -245,10 +229,10 @@ function Step2SelectRepos({
       </div>
 
       {/* Error state */}
-      {error && (
+      {(error || saveReposMutation.error) && (
         <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
           <AlertCircle className="h-4 w-4" />
-          {error}
+          {error || (saveReposMutation.error as Error)?.message}
         </div>
       )}
 
@@ -365,36 +349,16 @@ function Step2SelectRepos({
           onClick={async () => {
             if (selectedRepos.length > 0) {
               try {
-                setIsLoading(true)
-                setError(null)
-                // Save repositories to database
-                const response = await fetch('/api/repositories', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ repositories: selectedRepos }),
-                })
-                
-                if (!response.ok) {
-                  const errorData = await response.json().catch(() => ({ error: 'Failed to save repositories' }))
-                  setError(errorData.error || 'Failed to save repositories')
-                  setIsLoading(false)
-                  return
-                }
-                
-                setIsLoading(false)
-                onNext()
+                await saveReposMutation.mutateAsync(selectedRepos);
+                onNext();
               } catch (err) {
-                console.error('Error saving repositories:', err)
-                setError('Failed to save repositories. Please try again.')
-                setIsLoading(false)
+                console.error('Error saving repositories:', err);
               }
             }
           }}
-          disabled={selectedRepos.length === 0 || isLoading}
+          disabled={selectedRepos.length === 0 || saveReposMutation.isPending}
           className="hover-button">
-          {isLoading ? (
+          {saveReposMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Saving...

@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { useSavedRepositories } from '@/lib/hooks/use-repositories';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   getCurrentProfile,
@@ -63,18 +64,30 @@ function Sidebar({
   currentRepo?: string;
 }) {
   const pathname = usePathname();
-  
+
   // Build nav items with dynamic leaderboard link
   const navItems = [
-    { id: 'overview', href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
-    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
-    { 
-      id: 'leaderboards',
-      href: currentRepo ? `/app/leaderboard/${encodeURIComponent(currentRepo)}` : '/app/repos', 
-      icon: Trophy, 
-      label: 'Leaderboards' 
+    {
+      id: 'overview',
+      href: '/app/overview',
+      icon: LayoutDashboard,
+      label: 'Overview',
     },
-    { id: 'settings', href: '/app/settings', icon: Settings, label: 'Settings' },
+    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
+    {
+      id: 'leaderboards',
+      href: currentRepo
+        ? `/app/leaderboard/${encodeURIComponent(currentRepo)}`
+        : '/app/repos',
+      icon: Trophy,
+      label: 'Leaderboards',
+    },
+    {
+      id: 'settings',
+      href: '/app/settings',
+      icon: Settings,
+      label: 'Settings',
+    },
   ];
 
   return (
@@ -173,18 +186,30 @@ function Sidebar({
 
 function MobileNav({ currentRepo }: { currentRepo?: string }) {
   const pathname = usePathname();
-  
+
   // Build nav items with dynamic leaderboard link
   const navItems = [
-    { id: 'overview', href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
-    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
-    { 
-      id: 'leaderboards',
-      href: currentRepo ? `/app/leaderboard/${encodeURIComponent(currentRepo)}` : '/app/repos', 
-      icon: Trophy, 
-      label: 'Leaderboards' 
+    {
+      id: 'overview',
+      href: '/app/overview',
+      icon: LayoutDashboard,
+      label: 'Overview',
     },
-    { id: 'settings', href: '/app/settings', icon: Settings, label: 'Settings' },
+    { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
+    {
+      id: 'leaderboards',
+      href: currentRepo
+        ? `/app/leaderboard/${encodeURIComponent(currentRepo)}`
+        : '/app/repos',
+      icon: Trophy,
+      label: 'Leaderboards',
+    },
+    {
+      id: 'settings',
+      href: '/app/settings',
+      icon: Settings,
+      label: 'Settings',
+    },
   ];
 
   return (
@@ -241,30 +266,14 @@ function TopBar({
 }) {
   const [syncing, setSyncing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [repositories, setRepositories] = useState<Array<{ id: string; full_name: string; owner: string; name: string }>>([]);
-  const [reposLoading, setReposLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  // Fetch user's repositories
-  useEffect(() => {
-    async function fetchRepositories() {
-      try {
-        const response = await fetch('/api/repositories');
-        if (response.ok) {
-          const data = await response.json();
-          setRepositories(data.repositories || []);
-        }
-      } catch (error) {
-        console.error('Error fetching repositories:', error);
-      } finally {
-        setReposLoading(false);
-      }
-    }
-    fetchRepositories();
-  }, []);
+  // Use React Query for repositories
+  const { data: repositories = [], isLoading: reposLoading } =
+    useSavedRepositories();
 
   // Get current repo from URL
   const getCurrentRepo = () => {
@@ -501,7 +510,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           return;
         }
       }
-      
+
       // Check if we're on leaderboard page - extract repo from URL
       if (pathname.startsWith('/app/leaderboard/')) {
         const repoId = pathname.split('/app/leaderboard/')[1];
@@ -512,7 +521,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           return;
         }
       }
-      
+
       // Fetch first repository as default
       try {
         const response = await fetch('/api/repositories');
@@ -526,7 +535,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         console.error('Error fetching repositories:', error);
       }
     }
-    
+
     getCurrentRepository();
   }, [pathname, searchParams]);
 

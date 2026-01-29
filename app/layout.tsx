@@ -1,15 +1,17 @@
-import React from "react"
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import React from 'react';
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import { QueryProvider } from '@/lib/providers/query-provider';
+import './globals.css';
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _geist = Geist({ subsets: ['latin'] });
+const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'ProdLines - Leaderboard for Production Code',
-  description: 'Connect a repo and see who owns the most lines currently in production. Only merged code counts.',
+  description:
+    'Connect a repo and see who owns the most lines currently in production. Only merged code counts.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -28,19 +30,19 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

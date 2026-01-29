@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Code2,
   Users,
@@ -35,6 +35,7 @@ import {
   Info,
   GitBranch,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
@@ -142,6 +143,7 @@ function LeaderboardRow({
             rank === 2 && 'ring-zinc-400',
             rank === 3 && 'ring-amber-700',
           )}>
+          <AvatarImage src={contributor.avatarUrl} alt={contributor.username} />
           <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
             {contributor.username.slice(0, 2).toUpperCase()}
           </AvatarFallback>
@@ -270,15 +272,16 @@ export function OverviewPage({
   stats,
   isLoading: externalLoading = false,
   error,
-  repoOwner = 'acme-corp',
-  repoName = 'frontend-app',
+  repoOwner,
+  repoName,
 }: OverviewPageProps) {
   const [isLoading, setIsLoading] = useState(externalLoading);
   const [showEmpty, setShowEmpty] = useState(false);
   const [excludeBots, setExcludeBots] = useState(true);
   const [excludeTests, setExcludeTests] = useState(true);
   const [excludeDocs, setExcludeDocs] = useState(true);
-  const [lastSyncFormatted, setLastSyncFormatted] = useState<string>('Just now');
+  const [lastSyncFormatted, setLastSyncFormatted] =
+    useState<string>('Just now');
 
   // Format last sync time (client-side only to avoid hydration mismatch)
   const formatLastSync = (lastSync: string) => {
@@ -357,98 +360,17 @@ export function OverviewPage({
   const displayStats =
     stats && !showEmpty && !error && stats.contributors.length > 0;
 
-  const [selectedRepo, setSelectedRepo] = useState<string | null>(null)
-  const [savedRepos, setSavedRepos] = useState<Array<{ id: string; full_name: string; owner: string; name: string; default_branch: string }>>([])
-  const [reposLoading, setReposLoading] = useState(true)
-
-  // Fetch saved repositories on mount
-  useEffect(() => {
-    async function fetchSavedRepos() {
-      try {
-        const response = await fetch('/api/repositories')
-        if (response.ok) {
-          const data = await response.json()
-          setSavedRepos(data.repositories || [])
-          // Set current repo from URL or first repo as selected
-          const currentRepoFullName = `${repoOwner}/${repoName}`
-          const matchingRepo = data.repositories?.find((r: any) => r.full_name === currentRepoFullName)
-          if (matchingRepo) {
-            setSelectedRepo(matchingRepo.full_name)
-          } else if (data.repositories && data.repositories.length > 0 && !selectedRepo) {
-            const firstRepo = data.repositories[0]
-            setSelectedRepo(firstRepo.full_name)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching saved repositories:', error)
-      } finally {
-        setReposLoading(false)
-      }
-    }
-    fetchSavedRepos()
-  }, [repoOwner, repoName])
-
-  // Update stats when repository changes
-  useEffect(() => {
-    if (selectedRepo && savedRepos.length > 0) {
-      const repo = savedRepos.find(r => r.full_name === selectedRepo)
-      if (repo && selectedRepo !== `${repoOwner}/${repoName}`) {
-        // Trigger a page reload to fetch new stats
-        window.location.href = `/app/overview?repo=${encodeURIComponent(selectedRepo)}`
-      }
-    }
-  }, [selectedRepo, savedRepos, repoOwner, repoName])
-
-  const currentRepo = savedRepos.find(r => r.full_name === selectedRepo) || savedRepos.find(r => r.full_name === `${repoOwner}/${repoName}`)
-
   return (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Overview</h1>
-          {reposLoading ? (
-            <p className="text-muted-foreground">Loading repositories...</p>
-          ) : savedRepos.length > 0 ? (
-            <div className="flex items-center gap-2 mt-1">
-              <Select
-                value={selectedRepo || ''}
-                onValueChange={setSelectedRepo}
-              >
-                <SelectTrigger className="w-auto min-w-[200px] hover-button bg-transparent">
-                  <SelectValue placeholder="Select repository" />
-                </SelectTrigger>
-                <SelectContent>
-                  {savedRepos.map((repo) => (
-                    <SelectItem key={repo.id} value={repo.full_name}>
-                      {repo.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {savedRepos.length === 0 && (
-                <p className="text-muted-foreground text-sm">
-                  Production code ownership for {repoOwner}/{repoName}
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">
-              Production code ownership for {currentRepo ? currentRepo.full_name : `${repoOwner}/${repoName}`}
-            </p>
-          )}
+          <p className="text-muted-foreground">
+            Production code ownership for {repoOwner}/{repoName}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          {savedRepos.length === 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="hover-button bg-transparent"
-            >
-              <Link href="/app/repos">Connect Repository</Link>
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -465,6 +387,13 @@ export function OverviewPage({
             <p className="text-destructive text-sm">{error}</p>
           </CardContent>
         </Card>
+      )}
+
+      {displayLoading && (
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       )}
 
       {showEmpty || (!stats && !displayLoading) ? (
