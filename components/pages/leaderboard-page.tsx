@@ -37,11 +37,9 @@ import {
   ChevronRight,
   ArrowUpDown,
   Filter,
-  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GitHubStats, GitHubContributor } from '@/lib/types/github';
-import { useSearchParams } from 'next/navigation';
 
 interface LeaderboardPageProps {
   stats: GitHubStats | null;
@@ -566,15 +564,6 @@ export function LeaderboardPage({
 
   const [owner, repo] = repoFullName.split('/');
   const contributors = stats?.contributors || [];
-  const isLoading = !stats && !repoInfo;
-
-  // Debug logging
-  useEffect(() => {
-    console.log('LeaderboardPage - stats:', stats);
-    console.log('LeaderboardPage - repoInfo:', repoInfo);
-    console.log('LeaderboardPage - repoFullName:', repoFullName);
-    console.log('LeaderboardPage - isLoading:', isLoading);
-  }, [stats, repoInfo, repoFullName, isLoading]);
 
   return (
     <div className="space-y-6">
@@ -592,12 +581,7 @@ export function LeaderboardPage({
               </Badge>
             )}
           </div>
-          {isLoading ? (
-            <div className="flex items-center gap-3 mt-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          ) : stats ? (
+          {stats && (
             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
@@ -608,7 +592,7 @@ export function LeaderboardPage({
                 {stats.activeContributors} contributors
               </span>
             </div>
-          ) : null}
+          )}
         </div>
         <Button
           variant="outline"
@@ -628,32 +612,8 @@ export function LeaderboardPage({
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Loading leaderboard data...
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Fetching from GitHub API...
-          </p>
-        </div>
-      ) : !stats ? (
-        <Card className="hover-card bg-card/50 border-border/50">
-          <CardContent className="p-8 text-center space-y-4">
-            <p className="text-destructive font-medium">
-              Failed to load leaderboard data.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Repository: {repoFullName}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Check the browser console for error details.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        /* Tabs */
+      {/* Tabs */}
+      {stats && (
         <Tabs defaultValue="contributors" className="space-y-4">
           <TabsList className="bg-secondary/50 p-1">
             <TabsTrigger

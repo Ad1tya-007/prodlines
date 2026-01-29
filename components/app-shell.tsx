@@ -48,6 +48,8 @@ import {
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { useSavedRepositories } from '@/lib/hooks/use-repositories';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { setSelectedRepository } from '@/lib/store/repositorySlice';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   getCurrentProfile,
@@ -76,9 +78,7 @@ function Sidebar({
     { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
     {
       id: 'leaderboards',
-      href: currentRepo
-        ? `/app/leaderboard/${encodeURIComponent(currentRepo)}`
-        : '/app/repos',
+      href: '/app/leaderboard',
       icon: Trophy,
       label: 'Leaderboards',
     },
@@ -198,9 +198,7 @@ function MobileNav({ currentRepo }: { currentRepo?: string }) {
     { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
     {
       id: 'leaderboards',
-      href: currentRepo
-        ? `/app/leaderboard/${encodeURIComponent(currentRepo)}`
-        : '/app/repos',
+      href: '/app/leaderboard',
       icon: Trophy,
       label: 'Leaderboards',
     },
@@ -268,27 +266,30 @@ function TopBar({
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const supabase = createClient();
+  const dispatch = useAppDispatch();
+
+  // Get selected repository from Redux
+  const selectedRepository = useAppSelector(
+    (state) => state.repository.selectedRepository,
+  );
 
   // Use React Query for repositories
   const { data: repositories = [], isLoading: reposLoading } =
     useSavedRepositories();
 
-  // Get current repo from URL
-  const getCurrentRepo = () => {
-    if (pathname === '/app/overview') {
-      const repoParam = searchParams.get('repo');
-      if (repoParam) {
-        return repoParam;
-      }
+  // Set initial repository when repositories are loaded
+  useEffect(() => {
+    if (repositories.length > 0 && !selectedRepository) {
+      dispatch(setSelectedRepository(repositories[0]));
     }
-    // Return first repo as default if available
-    return repositories.length > 0 ? repositories[0].full_name : '';
-  };
+  }, [repositories, selectedRepository, dispatch]);
 
   const handleRepoChange = (fullName: string) => {
-    router.push(`/app/overview?repo=${encodeURIComponent(fullName)}`);
+    const repo = repositories.find((r) => r.full_name === fullName);
+    if (repo) {
+      dispatch(setSelectedRepository(repo));
+    }
   };
 
   const handleSync = () => {
@@ -301,31 +302,9 @@ function TopBar({
     e?.stopPropagation();
     setLoggingOut(true);
 
-    try {
-      // Sign out on client side first
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Client signOut error:', error);
-      }
-    } catch (error) {
-      console.error('Client signOut error:', error);
-    }
-
-    // Call server-side logout route
-    try {
-      const response = await fetch('/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      // Wait a moment for cookies to be cleared
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    } catch (error) {
-      console.error('Logout route error:', error);
-    }
-
-    // Always redirect to login after logout attempt
-    window.location.replace('/login');
+    // Immediately redirect to login page
+    // The logout will happen in the background
+    window.location.href = '/logout';
   };
 
   const getUserInitials = () => {
@@ -365,7 +344,9 @@ function TopBar({
           {reposLoading ? (
             <div className="w-48 md:w-56 h-10 bg-secondary/50 border border-border/50 rounded-md animate-pulse" />
           ) : repositories.length > 0 ? (
-            <Select value={getCurrentRepo()} onValueChange={handleRepoChange}>
+            <Select
+              value={selectedRepository?.full_name || ''}
+              onValueChange={handleRepoChange}>
               <SelectTrigger className="w-48 md:w-56 hover-button bg-secondary/50 border-border/50">
                 <SelectValue placeholder="Select repository" />
               </SelectTrigger>
@@ -466,7 +447,6 @@ function TopBar({
               <DropdownMenuItem
                 className="text-destructive"
                 onSelect={(e) => {
-                  e.preventDefault();
                   handleSignOut(e as any);
                 }}
                 disabled={loggingOut}>
@@ -494,50 +474,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [currentRepo, setCurrentRepo] = useState<string>('');
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  // Get current repository from URL or fetch first repo
-  useEffect(() => {
-    async function getCurrentRepository() {
-      // Check if we're on overview page with repo param
-      if (pathname === '/app/overview') {
-        const repoParam = searchParams.get('repo');
-        if (repoParam) {
-          setCurrentRepo(repoParam);
-          return;
-        }
-      }
-
-      // Check if we're on leaderboard page - extract repo from URL
-      if (pathname.startsWith('/app/leaderboard/')) {
-        const repoId = pathname.split('/app/leaderboard/')[1];
-        if (repoId) {
-          // Decode the repo ID (it's URL encoded)
-          const decodedRepo = decodeURIComponent(repoId);
-          setCurrentRepo(decodedRepo);
-          return;
-        }
-      }
-
-      // Fetch first repository as default
-      try {
-        const response = await fetch('/api/repositories');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.repositories && data.repositories.length > 0) {
-            setCurrentRepo(data.repositories[0].full_name);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching repositories:', error);
-      }
-    }
-
-    getCurrentRepository();
-  }, [pathname, searchParams]);
+  // Get selected repository from Redux
+  const selectedRepository = useAppSelector(
+    (state) => state.repository.selectedRepository,
+  );
 
   useEffect(() => {
     // Get initial user and profile
@@ -571,14 +514,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
-          currentRepo={currentRepo}
+          currentRepo={selectedRepository?.full_name}
         />
       </div>
       <TopBar
         sidebarCollapsed={sidebarCollapsed}
         user={user}
         profile={profile}
-        currentRepo={currentRepo}
+        currentRepo={selectedRepository?.full_name}
       />
       <main
         className={cn(

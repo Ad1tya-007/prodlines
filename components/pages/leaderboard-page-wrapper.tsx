@@ -1,62 +1,94 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { LeaderboardPage } from './leaderboard-page';
 import { useGitHubStats } from '@/lib/hooks/use-github-stats';
-import { useSavedRepositories } from '@/lib/hooks/use-repositories';
+import { useAppSelector } from '@/lib/store/hooks';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
-interface LeaderboardPageWrapperProps {
-  repoId: string;
-}
-
-export function LeaderboardPageWrapper({
-  repoId,
-}: LeaderboardPageWrapperProps) {
-  const searchParams = useSearchParams();
-  const repoParam = searchParams.get('repo');
-
-  // Decode URL-encoded repoId
-  const decodedRepoId = decodeURIComponent(repoId);
-  const repoFullName = repoParam || decodedRepoId;
-
-  const [owner, setOwner] = useState('');
-  const [repo, setRepo] = useState('');
-  const [branch, setBranch] = useState('main');
-
-  // Fetch saved repositories to get repo info
-  const { data: savedRepos = [] } = useSavedRepositories();
-
-  // Parse owner/repo and find branch
-  useEffect(() => {
-    const [repoOwner, repoName] = repoFullName.split('/');
-    if (repoOwner && repoName) {
-      setOwner(repoOwner);
-      setRepo(repoName);
-
-      // Find branch from saved repos
-      const savedRepo = savedRepos.find((r) => r.full_name === repoFullName);
-      if (savedRepo?.default_branch) {
-        setBranch(savedRepo.default_branch);
-      }
-    }
-  }, [repoFullName, savedRepos]);
+export function LeaderboardPageWrapper() {
+  // Get selected repository from Redux
+  const selectedRepository = useAppSelector(
+    (state) => state.repository.selectedRepository,
+  );
 
   // Fetch GitHub stats using React Query
   const {
     data: stats,
     isLoading,
     error,
-  } = useGitHubStats({ owner, repo, branch }, { enabled: !!owner && !!repo });
+  } = useGitHubStats(
+    {
+      owner: selectedRepository?.owner || '',
+      repo: selectedRepository?.name || '',
+      branch: selectedRepository?.default_branch || 'main',
+    },
+    { enabled: !!selectedRepository },
+  );
 
-  // Get repo info from saved repos
-  const repoInfo = savedRepos.find((r) => r.full_name === repoFullName) || null;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {selectedRepository?.owner || 'Loading'}/
+              {selectedRepository?.name || '...'}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Loading leaderboard data...
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Fetching leaderboard data...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            This may take a few moments
+          </p>
+        </div>
+      </div>
+    );
+  }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {selectedRepository?.owner || 'Error'}/
+              {selectedRepository?.name || ''}
+            </h1>
+          </div>
+        </div>
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="p-8 text-center space-y-4">
+            <p className="text-destructive font-medium">
+              Failed to load leaderboard data
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {(error as Error).message}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Repository: {selectedRepository?.full_name || 'Unknown'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show main content
   return (
     <LeaderboardPage
       stats={stats || null}
-      repoInfo={repoInfo}
-      repoFullName={repoFullName}
+      repoInfo={selectedRepository}
+      repoFullName={selectedRepository?.full_name || 'No repository selected'}
     />
   );
 }

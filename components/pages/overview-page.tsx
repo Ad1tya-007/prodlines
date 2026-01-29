@@ -122,7 +122,7 @@ function LeaderboardRow({
 
   return (
     <Link
-      href={`/app/leaderboard/1?contributor=${contributor.id}`}
+      href="/app/leaderboard"
       className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none">
       <div className="flex items-center gap-4">
         <span
@@ -428,7 +428,7 @@ export function OverviewPage({
                     size="sm"
                     className="hover-button bg-transparent"
                     asChild>
-                    <Link href="/app/leaderboard/1">
+                    <Link href="/app/leaderboard">
                       View all
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Link>

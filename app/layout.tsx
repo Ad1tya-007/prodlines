@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { QueryProvider } from '@/lib/providers/query-provider';
+import { ReduxProvider } from '@/lib/providers/redux-provider';
 import './globals.css';
 
 const _geist = Geist({ subsets: ['latin'] });
@@ -40,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <QueryProvider>{children}</QueryProvider>
+        <ReduxProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ReduxProvider>
         <Analytics />
       </body>
     </html>
