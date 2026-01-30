@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -26,29 +25,42 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Building2,
-  CreditCard,
-  Webhook,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  User,
+  Bell,
+  GitBranch,
   AlertTriangle,
-  Check,
-  Copy,
-  ExternalLink,
-  Users,
-  RefreshCw,
   Trash2,
+  Mail,
+  MessageSquare,
+  Shield,
+  Zap,
 } from 'lucide-react';
 
 export function SettingsPage() {
-  const [orgName, setOrgName] = useState('Acme Corp');
-  const [autoSync, setAutoSync] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [slackNotifications, setSlackNotifications] = useState(false);
-  const [copied, setCopied] = useState(false);
+  // Profile settings
+  const [displayName, setDisplayName] = useState('John Doe');
+  const [email, setEmail] = useState('john@example.com');
 
-  const handleCopyWebhook = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Repository sync settings
+  const [autoSync, setAutoSync] = useState(true);
+  const [syncFrequency, setSyncFrequency] = useState('hourly');
+  const [excludeBots, setExcludeBots] = useState(true);
+  const [excludeTests, setExcludeTests] = useState(true);
+  const [excludeDocs, setExcludeDocs] = useState(false);
+
+  // Notification settings
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [slackNotifications, setSlackNotifications] = useState(false);
+  const [discordNotifications, setDiscordNotifications] = useState(false);
+  const [leaderboardChanges, setLeaderboardChanges] = useState(true);
 
   return (
     <div className="space-y-6">
@@ -56,54 +68,79 @@ export function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your organization and account settings
+          Manage your account preferences and settings
         </p>
       </div>
 
-      {/* Organization Settings */}
+      {/* Profile Settings */}
       <Card className="hover-card bg-card/50 border-border/50">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-              <Building2 className="h-5 w-5" />
+              <User className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle>Organization</CardTitle>
+              <CardTitle>Profile</CardTitle>
               <CardDescription>
-                Manage your organization settings
+                Manage your personal information
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="org-name">Organization name</Label>
-            <Input
-              id="org-name"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              className="max-w-sm bg-secondary/50"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="org-slug">Organization slug</Label>
-            <div className="flex items-center gap-2 max-w-sm">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="display-name">Display name</Label>
               <Input
-                id="org-slug"
-                value="acme-corp"
-                disabled
-                className="bg-secondary/50 text-muted-foreground"
+                id="display-name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="max-w-sm bg-secondary/50"
+                placeholder="Your name"
               />
-              <Badge variant="secondary" className="shrink-0">
-                <Check className="h-3 w-3 mr-1" />
-                Verified
-              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex flex-row items-center gap-2">
+                <Label htmlFor="email">Email address</Label>
+                <p className="text-xs text-muted-foreground">
+                  ( Used for notifications and account recovery )
+                </p>
+              </div>
+
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="max-w-sm bg-secondary/50"
+                placeholder="your@email.com"
+              />
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <div className="pt-2 flex justify-end">
+            <Button className="hover-button">Save changes</Button>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Repository Sync Settings */}
+      <Card className="hover-card bg-card/50 border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+              <GitBranch className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Repository Sync</CardTitle>
+              <CardDescription>
+                Configure how your repositories are synced
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -119,12 +156,104 @@ export function SettingsPage() {
               />
             </div>
 
+            {autoSync && (
+              <div className="space-y-2 pl-4 border-l-2 border-border/50">
+                <Label htmlFor="sync-frequency">Sync frequency</Label>
+                <Select value={syncFrequency} onValueChange={setSyncFrequency}>
+                  <SelectTrigger
+                    id="sync-frequency"
+                    className="max-w-xs bg-secondary/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realtime">
+                      Real-time (on push)
+                    </SelectItem>
+                    <SelectItem value="hourly">Every hour</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Separator />
+
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="email-notif">Email notifications</Label>
+                <Label htmlFor="exclude-bots">Exclude bot contributions</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Get weekly ownership reports via email
+                  Filter out dependabot, renovate, and other automated commits
                 </p>
+              </div>
+              <Switch
+                id="exclude-bots"
+                checked={excludeBots}
+                onCheckedChange={setExcludeBots}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="exclude-tests">Exclude test files</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Don't count lines in test files (*.test.*, *.spec.*)
+                </p>
+              </div>
+              <Switch
+                id="exclude-tests"
+                checked={excludeTests}
+                onCheckedChange={setExcludeTests}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="exclude-docs">Exclude documentation</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Don't count markdown and documentation files
+                </p>
+              </div>
+              <Switch
+                id="exclude-docs"
+                checked={excludeDocs}
+                onCheckedChange={setExcludeDocs}
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <Button className="hover-button">Save preferences</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card className="hover-card bg-card/50 border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Choose how you want to be notified
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="email-notif">Email notifications</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Get updates about your repositories via email
+                  </p>
+                </div>
               </div>
               <Switch
                 id="email-notif"
@@ -133,12 +262,57 @@ export function SettingsPage() {
               />
             </div>
 
+            {emailNotifications && (
+              <div className="pl-11 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label
+                      htmlFor="weekly-digest"
+                      className="text-sm font-normal">
+                      Weekly digest
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Summary of ownership changes every week
+                    </p>
+                  </div>
+                  <Switch
+                    id="weekly-digest"
+                    checked={weeklyDigest}
+                    onCheckedChange={setWeeklyDigest}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label
+                      htmlFor="leaderboard-changes"
+                      className="text-sm font-normal">
+                      Leaderboard changes
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      When your rank changes significantly
+                    </p>
+                  </div>
+                  <Switch
+                    id="leaderboard-changes"
+                    checked={leaderboardChanges}
+                    onCheckedChange={setLeaderboardChanges}
+                  />
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
             <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="slack-notif">Slack notifications</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Send updates to your Slack workspace
-                </p>
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="slack-notif">Slack notifications</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Send updates to your Slack workspace
+                  </p>
+                </div>
               </div>
               <Switch
                 id="slack-notif"
@@ -146,145 +320,52 @@ export function SettingsPage() {
                 onCheckedChange={setSlackNotifications}
               />
             </div>
-          </div>
 
-          <div className="pt-2">
-            <Button className="hover-button">Save changes</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Billing */}
-      <Card className="hover-card bg-card/50 border-border/50">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-              <CreditCard className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <CardTitle>Billing</CardTitle>
-              <CardDescription>
-                Manage your subscription and billing
-              </CardDescription>
-            </div>
-            <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
-              Pro Plan
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">Current plan</p>
-              <p className="text-lg font-semibold mt-1">Pro</p>
-            </div>
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">Billing cycle</p>
-              <p className="text-lg font-semibold mt-1">Monthly</p>
-            </div>
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">Next invoice</p>
-              <p className="text-lg font-semibold mt-1">Feb 15, 2026</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Team seats</p>
-                <p className="text-sm text-muted-foreground">
-                  8 of 10 seats used
-                </p>
+            {slackNotifications && (
+              <div className="pl-11">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hover-button bg-transparent">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Connect Slack
+                </Button>
               </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="hover-button bg-transparent">
-              Add seats
-            </Button>
-          </div>
+            )}
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="hover-button bg-transparent">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Manage subscription
-            </Button>
-            <Button variant="outline" className="hover-button bg-transparent">
-              View invoices
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Webhook Status */}
-      <Card className="hover-card bg-card/50 border-border/50">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-              <Webhook className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <CardTitle>Webhook</CardTitle>
-              <CardDescription>
-                GitHub webhook integration status
-              </CardDescription>
-            </div>
-            <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              Connected
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Webhook URL</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                value="https://api.prodlines.io/webhooks/github/acme-corp"
-                readOnly
-                className="font-mono text-sm bg-secondary/50"
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="discord-notif">Discord notifications</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Send updates to your Discord server
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="discord-notif"
+                checked={discordNotifications}
+                onCheckedChange={setDiscordNotifications}
               />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyWebhook}
-                className="hover-button shrink-0 bg-transparent">
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
             </div>
+
+            {discordNotifications && (
+              <div className="pl-11">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hover-button bg-transparent">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Connect Discord
+                </Button>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">Last delivery</p>
-              <p className="font-medium mt-1">2 minutes ago</p>
-              <Badge
-                variant="outline"
-                className="mt-2 text-green-500 border-green-500/30">
-                200 OK
-              </Badge>
-            </div>
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Events received (24h)
-              </p>
-              <p className="font-medium mt-1">147 events</p>
-              <Badge variant="outline" className="mt-2">
-                push, pull_request
-              </Badge>
-            </div>
+          <div className="pt-2 flex justify-end">
+            <Button className="hover-button">Save preferences</Button>
           </div>
-
-          <Button variant="outline" className="hover-button bg-transparent">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Test webhook
-          </Button>
         </CardContent>
       </Card>
 
@@ -303,12 +384,12 @@ export function SettingsPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="flex items-center justify-between p-4 rounded-xl border border-destructive/30 bg-destructive/5">
             <div>
-              <p className="font-medium">Disconnect all repositories</p>
+              <p className="font-medium">Delete account</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Remove all connected repositories and their data
+                Permanently delete your account and all associated data
               </p>
             </div>
             <AlertDialog>
@@ -317,53 +398,22 @@ export function SettingsPage() {
                   variant="outline"
                   className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Disconnect
+                  Delete Account
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently
-                    disconnect all your repositories and delete all associated
-                    ownership data.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="hover-button">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button">
-                    Yes, disconnect all
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-xl border border-destructive/30 bg-destructive/5">
-            <div>
-              <p className="font-medium">Delete organization</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Permanently delete this organization and all its data
-              </p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive hover-button bg-transparent">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete organization?</AlertDialogTitle>
+                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete
-                    the organization &quot;{orgName}&quot; and all associated
-                    data including repositories, leaderboards, and team members.
+                    your account and remove all your data from our servers,
+                    including:
+                    <p className="mt-2 space-y-1 list-disc list-inside">
+                      <p> - All connected repositories</p>
+                      <p> - Leaderboard statistics and history</p>
+                      <p> - Profile information</p>
+                      <p> - Notification preferences</p>
+                    </p>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -371,7 +421,7 @@ export function SettingsPage() {
                     Cancel
                   </AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button">
-                    Yes, delete organization
+                    Yes, delete my account
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
