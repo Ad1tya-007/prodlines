@@ -4,7 +4,7 @@ import React from 'react';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,6 +44,8 @@ import {
   User,
   Bell,
   Loader2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -58,6 +60,7 @@ import {
   getCurrentProfile,
   type Profile,
 } from '@/lib/supabase/profiles-client';
+import { useTheme } from 'next-themes';
 
 function Sidebar({
   collapsed,
@@ -187,7 +190,7 @@ function Sidebar({
   );
 }
 
-function MobileNav({ currentRepo }: { currentRepo?: string }) {
+function MobileNav() {
   const pathname = usePathname();
 
   // Build nav items with dynamic leaderboard link
@@ -267,10 +270,14 @@ function TopBar({
 }) {
   const [syncing, setSyncing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const supabase = createClient();
+  const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
+  const { theme, setTheme } = useTheme();
+
+  // Prevent hydration mismatch for theme
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get selected repository from Redux
   const selectedRepository = useAppSelector(
@@ -345,7 +352,7 @@ function TopBar({
       )}>
       <div className="flex items-center justify-between h-full px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <MobileNav currentRepo={currentRepo} />
+          <MobileNav />
 
           {/* Repo selector */}
           {reposLoading ? (
@@ -410,6 +417,30 @@ function TopBar({
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
           </Button>
+
+          {/* Theme toggle */}
+          {mounted && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                  <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme('light')}>
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  Dark
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('system')}>
+                  System
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* User menu */}
           <DropdownMenu>
@@ -481,7 +512,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const pathname = usePathname();
   const supabase = createClient();
 
   // Get selected repository from Redux

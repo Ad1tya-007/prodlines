@@ -409,191 +409,46 @@ export function OverviewPage({
                 ))}
           </div>
 
-          {/* Main content grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Leaderboard - takes 2 columns */}
-            <Card
-              className="lg:col-span-2 hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-200"
-              style={{ animationFillMode: 'forwards' }}>
-              <CardHeader className="border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Leaderboard</CardTitle>
-                    <CardDescription>
-                      Production LOC ownership ranking
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="hover-button bg-transparent"
-                    asChild>
-                    <Link href="/app/leaderboard">
-                      View all
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
+          {/* Main content */}
+          <Card
+            className="lg:col-span-2 hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-200"
+            style={{ animationFillMode: 'forwards' }}>
+            <CardHeader className="border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Leaderboard</CardTitle>
+                  <CardDescription>
+                    Production LOC ownership ranking
+                  </CardDescription>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {displayLoading ? (
-                  <LeaderboardSkeleton />
-                ) : (
-                  <div className="divide-y divide-border/50">
-                    {stats.contributors
-                      .slice(0, 8)
-                      .map((contributor, index) => (
-                        <LeaderboardRow
-                          key={contributor.id}
-                          contributor={contributor}
-                          rank={index + 1}
-                        />
-                      ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Right sidebar - filters and definitions */}
-            <div className="space-y-6">
-              {/* Filters */}
-              <Card
-                className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-300"
-                style={{ animationFillMode: 'forwards' }}>
-                <CardHeader>
-                  <CardTitle className="text-base">Filters</CardTitle>
-                  <CardDescription>Configure counting rules</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Exclude patterns */}
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">
-                      Exclude paths
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {defaultExcludes.map((pattern) => (
-                        <FilterChip
-                          key={pattern}
-                          label={pattern}
-                          onRemove={() => {}}
-                        />
-                      ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs hover-button">
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Include patterns */}
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">
-                      Include paths
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {defaultIncludes.map((pattern) => (
-                        <FilterChip
-                          key={pattern}
-                          label={pattern}
-                          onRemove={() => {}}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* File type filter */}
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-2 block">
-                      File types
-                    </Label>
-                    <Select defaultValue="all">
-                      <SelectTrigger className="hover-button">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All files</SelectItem>
-                        <SelectItem value="ts">TypeScript only</SelectItem>
-                        <SelectItem value="js">JavaScript only</SelectItem>
-                        <SelectItem value="tsx">React (TSX/JSX)</SelectItem>
-                        <SelectItem value="css">Styles (CSS/SCSS)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Toggle options */}
-                  <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-tests" className="text-sm">
-                        Exclude tests
-                      </Label>
-                      <Switch
-                        id="exclude-tests"
-                        checked={excludeTests}
-                        onCheckedChange={setExcludeTests}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-docs" className="text-sm">
-                        Exclude docs
-                      </Label>
-                      <Switch
-                        id="exclude-docs"
-                        checked={excludeDocs}
-                        onCheckedChange={setExcludeDocs}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="exclude-bots" className="text-sm">
-                        Exclude bots
-                      </Label>
-                      <Switch
-                        id="exclude-bots"
-                        checked={excludeBots}
-                        onCheckedChange={setExcludeBots}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Definitions */}
-              <Card
-                className="hover-card bg-card/50 border-border/50 opacity-0 animate-fade-in animate-delay-400"
-                style={{ animationFillMode: 'forwards' }}>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Definitions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div>
-                    <p className="font-medium">Production LOC</p>
-                    <p className="text-muted-foreground text-xs">
-                      Lines of code in the default branch that have been merged
-                      via pull request.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Ownership</p>
-                    <p className="text-muted-foreground text-xs">
-                      Based on git blame. The last person to modify a line owns
-                      it.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Trend</p>
-                    <p className="text-muted-foreground text-xs">
-                      Week-over-week change in ownership percentage.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hover-button bg-transparent"
+                  asChild>
+                  <Link href="/app/leaderboard">
+                    View all
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {displayLoading ? (
+                <LeaderboardSkeleton />
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {stats.contributors.slice(0, 8).map((contributor, index) => (
+                    <LeaderboardRow
+                      key={contributor.id}
+                      contributor={contributor}
+                      rank={index + 1}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       ) : null}
     </div>

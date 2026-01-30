@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { ReduxProvider } from '@/lib/providers/redux-provider';
 import './globals.css';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
@@ -39,12 +40,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <ReduxProvider>
-          <QueryProvider>{children}</QueryProvider>
-        </ReduxProvider>
-        <Analytics />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${_geist.className} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange>
+          <ReduxProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </ReduxProvider>
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );
