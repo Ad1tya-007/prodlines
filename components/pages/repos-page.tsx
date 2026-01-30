@@ -1,167 +1,45 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Github,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Search,
   Check,
-  ChevronRight,
-  ChevronLeft,
   GitBranch,
   Settings2,
-  Play,
-  X,
   Plus,
   Lock,
   Loader2,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation';
 import {
   useGitHubRepositories,
   useSaveRepositories,
+  useSavedRepositories,
+  useDeleteRepository,
 } from '@/lib/hooks/use-repositories';
-import type { GitHubRepository } from '@/lib/types/github';
 
-// Default exclude patterns
-const defaultExcludePatterns = [
-  '**/node_modules/**',
-  '**/dist/**',
-  '**/*.min.js',
-  '**/vendor/**',
-  '**/.git/**',
-];
-
-// Mock leaderboard preview
-const previewLeaderboard = [
-  { rank: 1, name: 'alexchen', loc: '45,892', share: '28.4%' },
-  { rank: 2, name: 'sarahdev', loc: '38,241', share: '23.7%' },
-  { rank: 3, name: 'mikejohnson', loc: '28,456', share: '17.6%' },
-];
-
-const steps = [
-  { id: 1, title: 'Connect GitHub', description: 'Authorize read-only access' },
-  { id: 2, title: 'Select Repositories', description: 'Choose repos to track' },
-  { id: 3, title: 'Production Branch', description: 'Define your main branch' },
-  { id: 4, title: 'Configure Rules', description: 'Set counting filters' },
-];
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="flex items-center justify-center mb-8">
-      {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center">
-          <div className="flex flex-col items-center">
-            <div
-              className={cn(
-                'w-10 h-10 rounded-xl flex items-center justify-center font-medium transition-all duration-200',
-                currentStep === step.id
-                  ? 'bg-foreground text-background'
-                  : currentStep > step.id
-                    ? 'bg-green-500/20 text-green-500 border border-green-500/30'
-                    : 'bg-secondary text-muted-foreground',
-                currentStep === step.id && 'hover:rounded-none',
-              )}>
-              {currentStep > step.id ? <Check className="h-5 w-5" /> : step.id}
-            </div>
-            <div className="mt-2 text-center hidden sm:block">
-              <p
-                className={cn(
-                  'text-xs font-medium',
-                  currentStep === step.id
-                    ? 'text-foreground'
-                    : 'text-muted-foreground',
-                )}>
-                {step.title}
-              </p>
-            </div>
-          </div>
-          {index < steps.length - 1 && (
-            <div
-              className={cn(
-                'w-12 sm:w-24 h-0.5 mx-2',
-                currentStep > step.id ? 'bg-green-500/50' : 'bg-border',
-              )}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Step1ConnectGitHub({ onNext }: { onNext: () => void }) {
-  return (
-    <div className="text-center space-y-6">
-      <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center">
-        <Github className="h-10 w-10" />
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold">Connect your GitHub account</h2>
-        <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-          ProdLines needs read-only access to analyze your repositories. We
-          never write to your repos or store tokens.
-        </p>
-      </div>
-      <div className="flex flex-col items-center gap-4">
-        <Button size="lg" className="hover-button group" onClick={onNext}>
-          <Github className="h-5 w-5 mr-2" />
-          Continue with GitHub
-          <ChevronRight className="h-5 w-5 ml-1 icon-hover" />
-        </Button>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Check className="h-3 w-3 text-green-500" />
-            Read-only access
-          </span>
-          <span className="flex items-center gap-1">
-            <Check className="h-3 w-3 text-green-500" />
-            No tokens stored
-          </span>
-          <span className="flex items-center gap-1">
-            <Check className="h-3 w-3 text-green-500" />
-            SOC2-ready
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Step2SelectRepos({
-  selectedRepos,
-  setSelectedRepos,
-  onNext,
-  onBack,
-}: {
-  selectedRepos: string[];
-  setSelectedRepos: (repos: string[]) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
+function AddRepositories() {
+  const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
   const [search, setSearch] = useState('');
 
   // Use React Query to fetch repositories
@@ -191,6 +69,17 @@ function Step2SelectRepos({
     );
   };
 
+  const handleSave = async () => {
+    if (selectedRepos.length > 0) {
+      try {
+        await saveReposMutation.mutateAsync(selectedRepos);
+        setSelectedRepos([]); // Clear selection after successful save
+      } catch (err) {
+        console.error('Error saving repositories:', err);
+      }
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -211,7 +100,7 @@ function Step2SelectRepos({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Select repositories</h2>
+        <h2 className="text-2xl font-bold">Add repositories</h2>
         <p className="text-muted-foreground mt-2">
           Choose which repositories to track for production code ownership.
         </p>
@@ -236,9 +125,17 @@ function Step2SelectRepos({
         </div>
       )}
 
+      {/* Success message */}
+      {saveReposMutation.isSuccess && (
+        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm flex items-center gap-2">
+          <Check className="h-4 w-4" />
+          Repositories saved successfully!
+        </div>
+      )}
+
       {/* Loading state */}
       {isLoading && (
-        <div className="grid gap-2 max-h-80 overflow-y-auto">
+        <div className="grid gap-2 max-h-96 overflow-y-auto">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
@@ -255,7 +152,7 @@ function Step2SelectRepos({
 
       {/* Repo list */}
       {!isLoading && !error && (
-        <div className="grid gap-2 max-h-80 overflow-y-auto">
+        <div className="grid gap-2 max-h-96 overflow-y-auto">
           {filteredRepos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No repositories found</p>
@@ -325,455 +222,321 @@ function Step2SelectRepos({
         </div>
       )}
 
-      {/* Selected count */}
+      {/* Selected count and save button */}
       {!isLoading && !error && (
-        <div className="text-center text-sm text-muted-foreground">
-          {selectedRepos.length}{' '}
-          {selectedRepos.length === 1 ? 'repository' : 'repositories'} selected
-          {repositories.length > 0 && (
-            <span className="ml-2">({repositories.length} total)</span>
+        <div className="flex items-center justify-between pt-4">
+          <div className="text-sm text-muted-foreground">
+            {selectedRepos.length}{' '}
+            {selectedRepos.length === 1 ? 'repository' : 'repositories'}{' '}
+            selected
+            {repositories.length > 0 && (
+              <span className="ml-2">({repositories.length} total)</span>
+            )}
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={selectedRepos.length === 0 || saveReposMutation.isPending}
+            className="hover-button">
+            {saveReposMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Add{' '}
+                {selectedRepos.length > 0 ? `(${selectedRepos.length})` : ''}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManageRepositories() {
+  const [search, setSearch] = useState('');
+  const [deletingRepoId, setDeletingRepoId] = useState<string | null>(null);
+  const [repoToDelete, setRepoToDelete] = useState<{
+    id: string;
+    full_name: string;
+  } | null>(null);
+
+  // Fetch saved repositories
+  const {
+    data: savedRepositories = [],
+    isLoading,
+    error: queryError,
+  } = useSavedRepositories();
+
+  const error = queryError ? (queryError as Error).message : null;
+
+  // Delete mutation
+  const deleteRepoMutation = useDeleteRepository();
+
+  const filteredRepos = savedRepositories.filter(
+    (repo) =>
+      repo.name.toLowerCase().includes(search.toLowerCase()) ||
+      repo.owner.toLowerCase().includes(search.toLowerCase()) ||
+      repo.full_name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleDeleteClick = (repo: { id: string; full_name: string }) => {
+    setRepoToDelete(repo);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!repoToDelete) return;
+
+    setDeletingRepoId(repoToDelete.id);
+    try {
+      await deleteRepoMutation.mutateAsync(repoToDelete.id);
+      setRepoToDelete(null);
+    } catch (err) {
+      console.error('Error deleting repository:', err);
+    } finally {
+      setDeletingRepoId(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setRepoToDelete(null);
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      return `${Math.floor(diffDays / 30)} months ago`;
+    } catch {
+      return dateString;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Manage repositories</h2>
+      <p className="text-muted-foreground">
+        Remove repositories you no longer want to track.
+      </p>
+
+      {/* Search */}
+      <div className="relative mx-auto">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search repositories..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 bg-secondary/50 border-border/50"
+        />
+      </div>
+
+      {/* Error state */}
+      {(error || deleteRepoMutation.error) && (
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          {error || (deleteRepoMutation.error as Error)?.message}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="grid gap-2 max-h-96 overflow-y-auto">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 p-4 rounded-xl border bg-card/50 border-border/50">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <Skeleton className="h-9 w-20" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && !error && savedRepositories.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <GitBranch className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p className="font-medium">No repositories connected</p>
+          <p className="text-sm mt-2">
+            Add repositories from the "Add Repositories" tab
+          </p>
+        </div>
+      )}
+
+      {/* Repo list */}
+      {!isLoading && !error && savedRepositories.length > 0 && (
+        <div className="grid gap-2 max-h-96 overflow-y-auto">
+          {filteredRepos.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No repositories found</p>
+              {search && (
+                <p className="text-sm mt-2">Try a different search term</p>
+              )}
+            </div>
+          ) : (
+            filteredRepos.map((repo) => (
+              <div
+                key={repo.id}
+                className="flex items-center justify-between p-4 rounded-xl border bg-card/50 border-border/50 hover:bg-secondary/50 transition-all duration-200 hover:rounded-none group">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="text-xs bg-secondary">
+                      {repo.owner.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">
+                        {repo.full_name}
+                      </span>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        <GitBranch className="h-3 w-3 mr-1" />
+                        {repo.default_branch}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>
+                        Last synced: {formatDate(repo.last_synced_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDeleteClick({
+                      id: repo.id,
+                      full_name: repo.full_name,
+                    })
+                  }
+                  disabled={deletingRepoId === repo.id}
+                  className="hover-button bg-transparent text-destructive hover:text-destructive border-destructive/30 hover:border-destructive shrink-0">
+                  {deletingRepoId === repo.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </div>
+            ))
           )}
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="hover-button bg-transparent">
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Button
-          onClick={async () => {
-            if (selectedRepos.length > 0) {
-              try {
-                await saveReposMutation.mutateAsync(selectedRepos);
-                onNext();
-              } catch (err) {
-                console.error('Error saving repositories:', err);
-              }
-            }
-          }}
-          disabled={selectedRepos.length === 0 || saveReposMutation.isPending}
-          className="hover-button">
-          {saveReposMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              Continue
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </>
+      {/* Count */}
+      {!isLoading && !error && savedRepositories.length > 0 && (
+        <div className="text-center text-sm text-muted-foreground">
+          {filteredRepos.length}{' '}
+          {filteredRepos.length === 1 ? 'repository' : 'repositories'} shown
+          {savedRepositories.length > 0 && search && (
+            <span className="ml-2">({savedRepositories.length} total)</span>
           )}
-        </Button>
-      </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!repoToDelete} onOpenChange={handleDeleteCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete repository?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">
+                {repoToDelete?.full_name}
+              </span>
+              ? This will:
+              <ul className="mt-2 space-y-1 list-disc list-inside">
+                <li>Stop tracking this repository</li>
+                <li>Remove all synced data and statistics</li>
+                <li>Clear it from your leaderboards</li>
+              </ul>
+              <p className="mt-3 text-destructive font-medium">
+                This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Repository
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-}
-
-function Step3ProductionBranch({
-  onNext,
-  onBack,
-}: {
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const [branch, setBranch] = useState('main');
-  const [useEnvMapping, setUseEnvMapping] = useState(false);
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Define production branch</h2>
-        <p className="text-muted-foreground mt-2">
-          Only code merged into this branch will count toward ownership.
-        </p>
-      </div>
-
-      <div className="max-w-md mx-auto space-y-6">
-        {/* Branch selector */}
-        <div className="space-y-2">
-          <Label>Production branch</Label>
-          <Select value={branch} onValueChange={setBranch}>
-            <SelectTrigger className="hover-button bg-secondary/50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="main">
-                <div className="flex items-center gap-2">
-                  <GitBranch className="h-4 w-4" />
-                  main
-                </div>
-              </SelectItem>
-              <SelectItem value="master">
-                <div className="flex items-center gap-2">
-                  <GitBranch className="h-4 w-4" />
-                  master
-                </div>
-              </SelectItem>
-              <SelectItem value="release">
-                <div className="flex items-center gap-2">
-                  <GitBranch className="h-4 w-4" />
-                  release
-                </div>
-              </SelectItem>
-              <SelectItem value="custom">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="h-4 w-4" />
-                  Custom...
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {branch === 'custom' && (
-          <div className="space-y-2">
-            <Label>Custom branch name</Label>
-            <Input
-              placeholder="e.g., production, deploy"
-              className="bg-secondary/50"
-            />
-          </div>
-        )}
-
-        {/* Environment mapping toggle */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
-          <div>
-            <Label htmlFor="env-mapping" className="font-medium">
-              Environment mapping
-            </Label>
-            <p className="text-xs text-muted-foreground mt-1">
-              Track multiple branches for staging/production separation
-            </p>
-          </div>
-          <Switch
-            id="env-mapping"
-            checked={useEnvMapping}
-            onCheckedChange={setUseEnvMapping}
-          />
-        </div>
-
-        {useEnvMapping && (
-          <div className="space-y-3 p-4 rounded-xl bg-secondary/20 border border-border/50">
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                Production
-              </Label>
-              <Select defaultValue="main">
-                <SelectTrigger className="hover-button">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="main">main</SelectItem>
-                  <SelectItem value="master">master</SelectItem>
-                  <SelectItem value="release">release</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Staging</Label>
-              <Select defaultValue="develop">
-                <SelectTrigger className="hover-button">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="develop">develop</SelectItem>
-                  <SelectItem value="staging">staging</SelectItem>
-                  <SelectItem value="next">next</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="hover-button bg-transparent">
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={onNext} className="hover-button">
-          Continue
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function Step4ConfigureRules({
-  onNext,
-  onBack,
-}: {
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const [excludePatterns, setExcludePatterns] = useState(
-    defaultExcludePatterns,
-  );
-  const [includePatterns, setIncludePatterns] = useState<string[]>([]);
-  const [newPattern, setNewPattern] = useState('');
-  const [excludeBots, setExcludeBots] = useState(true);
-
-  const addExcludePattern = () => {
-    if (newPattern && !excludePatterns.includes(newPattern)) {
-      setExcludePatterns([...excludePatterns, newPattern]);
-      setNewPattern('');
-    }
-  };
-
-  const removeExcludePattern = (pattern: string) => {
-    setExcludePatterns(excludePatterns.filter((p) => p !== pattern));
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Configure counting rules</h2>
-        <p className="text-muted-foreground mt-2">
-          Customize which files and paths are included in ownership
-          calculations.
-        </p>
-      </div>
-
-      <div className="max-w-lg mx-auto space-y-6">
-        {/* Exclude patterns */}
-        <div className="space-y-3">
-          <Label>Exclude patterns</Label>
-          <div className="flex flex-wrap gap-2 p-3 rounded-xl bg-secondary/30 border border-border/50 min-h-[60px]">
-            {excludePatterns.map((pattern) => (
-              <Badge
-                key={pattern}
-                variant="secondary"
-                className="text-xs flex items-center gap-1 pr-1">
-                <span className="font-mono">{pattern}</span>
-                <button
-                  onClick={() => removeExcludePattern(pattern)}
-                  className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center">
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add pattern, e.g. **/test/**"
-              value={newPattern}
-              onChange={(e) => setNewPattern(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addExcludePattern()}
-              className="bg-secondary/50 font-mono text-sm"
-            />
-            <Button
-              variant="outline"
-              onClick={addExcludePattern}
-              className="hover-button bg-transparent">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Include patterns */}
-        <div className="space-y-3">
-          <Label>Include patterns (optional)</Label>
-          <p className="text-xs text-muted-foreground">
-            If specified, only files matching these patterns will be counted.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g. src/**, lib/**"
-              className="bg-secondary/50 font-mono text-sm"
-            />
-            <Button variant="outline" className="hover-button bg-transparent">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Exclude bots toggle */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
-          <div>
-            <Label htmlFor="exclude-bots" className="font-medium">
-              Exclude bot contributions
-            </Label>
-            <p className="text-xs text-muted-foreground mt-1">
-              Filter out dependabot, renovate, and other automated commits
-            </p>
-          </div>
-          <Switch
-            id="exclude-bots"
-            checked={excludeBots}
-            onCheckedChange={setExcludeBots}
-          />
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="hover-button bg-transparent">
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={onNext} className="hover-button">
-          Complete Setup
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function CompletionScreen({ onStart }: { onStart: () => void }) {
-  return (
-    <div className="text-center space-y-6">
-      <div className="w-20 h-20 rounded-2xl bg-green-500/20 border border-green-500/30 mx-auto flex items-center justify-center">
-        <Check className="h-10 w-10 text-green-500" />
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold">Setup complete!</h2>
-        <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-          Your repositories are configured. Start the first sync to analyze your
-          codebase.
-        </p>
-      </div>
-      <Button size="lg" className="hover-button group" onClick={onStart}>
-        <Play className="h-5 w-5 mr-2" />
-        Start First Sync
-        <ChevronRight className="h-5 w-5 ml-1 icon-hover" />
-      </Button>
-    </div>
-  );
-}
-
-function LeaderboardPreview() {
-  return (
-    <Card className="hover-card bg-card/50 border-border/50 h-fit sticky top-24">
-      <CardHeader className="border-b border-border/50">
-        <CardTitle className="text-base">Preview</CardTitle>
-        <CardDescription>How your leaderboard will look</CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y divide-border/50">
-          {previewLeaderboard.map((item) => (
-            <div
-              key={item.rank}
-              className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <span
-                  className={cn(
-                    'font-bold',
-                    item.rank === 1 && 'text-amber-500',
-                    item.rank === 2 && 'text-zinc-400',
-                    item.rank === 3 && 'text-amber-700',
-                  )}>
-                  #{item.rank}
-                </span>
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-secondary text-foreground text-xs">
-                    {item.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{item.name}</span>
-              </div>
-              <div className="text-right">
-                <p className="text-xs font-mono">{item.loc}</p>
-                <p className="text-xs text-muted-foreground">{item.share}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Loading() {
-  return null;
 }
 
 export function ReposPage() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
-  const [isComplete, setIsComplete] = useState(false);
-  const searchParams = useSearchParams();
-
-  const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setIsComplete(true);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleStart = () => {
-    // Mock sync start - would redirect to overview
-    window.location.href = '/app/overview';
-  };
-
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main wizard area */}
-        <div className="lg:col-span-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">Repositories</h1>
+        <p className="text-muted-foreground mt-1">
+          Manage which repositories to track for production code ownership.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="add" className="space-y-6">
+        <TabsList className="bg-secondary/50 p-1">
+          <TabsTrigger
+            value="add"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Repositories
+          </TabsTrigger>
+          <TabsTrigger
+            value="manage"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all duration-200 data-[state=active]:rounded-lg hover:rounded-none">
+            <Settings2 className="h-4 w-4 mr-2" />
+            Manage Repositories
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="add" className="mt-6">
           <Card className="hover-card bg-card/50 border-border/50">
             <CardContent className="p-6 sm:p-8">
-              {!isComplete && <StepIndicator currentStep={currentStep} />}
-
-              {isComplete ? (
-                <CompletionScreen onStart={handleStart} />
-              ) : (
-                <>
-                  {currentStep === 1 && (
-                    <Step1ConnectGitHub onNext={handleNext} />
-                  )}
-                  {currentStep === 2 && (
-                    <Step2SelectRepos
-                      selectedRepos={selectedRepos}
-                      setSelectedRepos={setSelectedRepos}
-                      onNext={handleNext}
-                      onBack={handleBack}
-                    />
-                  )}
-                  {currentStep === 3 && (
-                    <Step3ProductionBranch
-                      onNext={handleNext}
-                      onBack={handleBack}
-                    />
-                  )}
-                  {currentStep === 4 && (
-                    <Step4ConfigureRules
-                      onNext={handleNext}
-                      onBack={handleBack}
-                    />
-                  )}
-                </>
-              )}
+              <AddRepositories />
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
 
-        {/* Preview panel */}
-        <div className="hidden lg:block">
-          <LeaderboardPreview />
-        </div>
-      </div>
+        <TabsContent value="manage" className="mt-6">
+          <Card className="hover-card bg-card/50 border-border/50">
+            <CardContent className="p-6 sm:p-8">
+              <ManageRepositories />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

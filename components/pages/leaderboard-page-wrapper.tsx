@@ -13,6 +13,7 @@ export function LeaderboardPageWrapper() {
   );
 
   // Fetch GitHub stats using React Query
+  // IMPORTANT: Only fetch if we have a selected repository
   const {
     data: stats,
     isLoading,
@@ -25,6 +26,26 @@ export function LeaderboardPageWrapper() {
     },
     { enabled: !!selectedRepository },
   );
+
+  // Show empty state if no repository selected
+  if (!selectedRepository) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Leaderboard</h1>
+          </div>
+        </div>
+        <Card className="border-border/50 bg-card/50">
+          <CardContent className="p-8 text-center space-y-4">
+            <p className="text-muted-foreground">
+              No repository selected. Please connect a repository first.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Show loading state
   if (isLoading) {

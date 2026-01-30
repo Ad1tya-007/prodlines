@@ -49,7 +49,10 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { useSavedRepositories } from '@/lib/hooks/use-repositories';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { setSelectedRepository } from '@/lib/store/repositorySlice';
+import {
+  setSelectedRepository,
+  clearSelectedRepository,
+} from '@/lib/store/repositorySlice';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   getCurrentProfile,
@@ -278,10 +281,14 @@ function TopBar({
   const { data: repositories = [], isLoading: reposLoading } =
     useSavedRepositories();
 
-  // Set initial repository when repositories are loaded
+  // Set initial repository when repositories are loaded, or clear if none
   useEffect(() => {
     if (repositories.length > 0 && !selectedRepository) {
+      // Auto-select first repository if none selected
       dispatch(setSelectedRepository(repositories[0]));
+    } else if (repositories.length === 0 && selectedRepository) {
+      // Clear selected repository if no repositories exist
+      dispatch(clearSelectedRepository());
     }
   }, [repositories, selectedRepository, dispatch]);
 

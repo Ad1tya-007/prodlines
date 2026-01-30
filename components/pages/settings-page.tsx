@@ -51,7 +51,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
