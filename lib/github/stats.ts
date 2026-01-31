@@ -77,7 +77,14 @@ export async function fetchGitHubStats(
       additions: number;
       deletions: number;
       files: Set<string>;
-      prs: string[];
+      prs: Array<{
+        title: string;
+        url: string;
+        number: number;
+        linesAdded: number;
+        linesDeleted: number;
+        mergedAt: string;
+      }>;
     }
   >();
 
@@ -125,9 +132,13 @@ export async function fetchGitHubStats(
     }
   }
 
-  // Process PRs
+  // Process PRs - fetch detailed info for each PR to get additions/deletions
   const mergedPRs = prsData.filter((pr: any) => pr.merged_at);
-  for (const pr of mergedPRs.slice(0, 50)) {
+  
+  // Limit to first 30 PRs to avoid too many API calls
+  const prsToProcess = mergedPRs.slice(0, 30);
+  
+  for (const pr of prsToProcess) {
     const author = pr.user?.login;
     if (!author || author.includes('[bot]') || author.includes('bot')) continue;
 
@@ -142,7 +153,35 @@ export async function fetchGitHubStats(
     }
 
     const stats = contributorStats.get(author)!;
-    stats.prs.push(pr.title);
+    
+    // Fetch detailed PR info to get additions/deletions
+    let linesAdded = 0;
+    let linesDeleted = 0;
+    
+    try {
+      const prDetailResponse = await fetch(
+        `${baseUrl}/repos/${owner}/${repo}/pulls/${pr.number}`,
+        { headers }
+      );
+      
+      if (prDetailResponse.ok) {
+        const prDetail = await prDetailResponse.json();
+        linesAdded = prDetail.additions || 0;
+        linesDeleted = prDetail.deletions || 0;
+      }
+    } catch (e) {
+      // If fetch fails, use 0 for both
+      console.error(`Failed to fetch PR #${pr.number} details:`, e);
+    }
+    
+    stats.prs.push({
+      title: pr.title,
+      url: pr.html_url,
+      number: pr.number,
+      linesAdded,
+      linesDeleted,
+      mergedAt: pr.merged_at,
+    });
   }
 
   // Calculate total LOC (approximation from additions)

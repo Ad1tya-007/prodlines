@@ -39,14 +39,13 @@ import {
   Trash2,
   Mail,
   MessageSquare,
-  Shield,
   Zap,
 } from 'lucide-react';
 
 export function SettingsPage() {
   // Profile settings
-  const [displayName, setDisplayName] = useState('John Doe');
-  const [email, setEmail] = useState('john@example.com');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
 
   // Repository sync settings
   const [autoSync, setAutoSync] = useState(true);

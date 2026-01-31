@@ -34,6 +34,8 @@ import {
   Check,
   ChevronRight,
   ArrowUpDown,
+  ExternalLink,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GitHubStats, GitHubContributor } from '@/lib/types/github';
@@ -62,6 +64,8 @@ function ContributorDetailModal({
 }) {
   if (!contributor) return null;
 
+  console.log(contributor);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
@@ -78,59 +82,28 @@ function ContributorDetailModal({
             </Avatar>
             <div>
               <span className="text-xl">{contributor.username}</span>
-              <p className="text-sm text-muted-foreground font-normal">
-                {contributor.productionLOC.toLocaleString()} production LOC
-              </p>
             </div>
           </DialogTitle>
           <DialogDescription>
             Contributor details and ownership breakdown
           </DialogDescription>
-        </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Stats grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className=" gap-4 grid grid-cols-2">
             <div className="text-center p-3 rounded-xl bg-secondary/50">
               <p className="text-2xl font-bold">{contributor.percentShare}%</p>
               <p className="text-xs text-muted-foreground">Ownership</p>
             </div>
+
             <div className="text-center p-3 rounded-xl bg-secondary/50">
               <p className="text-2xl font-bold">
-                {contributor.topFiles.length}
+                {contributor.productionLOC.toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground">Top Files</p>
-            </div>
-            <div className="text-center p-3 rounded-xl bg-secondary/50">
-              <p className="text-2xl font-bold">
-                {contributor.recentPRs.length}
-              </p>
-              <p className="text-xs text-muted-foreground">Recent PRs</p>
+              <p className="text-xs text-muted-foreground">Production LOC</p>
             </div>
           </div>
+        </DialogHeader>
 
-          {/* Top files */}
-          <div>
-            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <FileCode className="h-4 w-4 text-muted-foreground" />
-              Top owned files
-            </h4>
-            <div className="space-y-2">
-              {contributor.topFiles.map((file) => (
-                <div
-                  key={file}
-                  className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 text-sm">
-                  <span className="font-mono text-xs truncate max-w-[250px]">
-                    {file}
-                  </span>
-                  <Badge variant="outline" className="text-xs ml-2">
-                    {Math.floor(Math.random() * 500 + 200)} LOC
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-
+        <div className="space-y-6 py-4">
           {/* Recent PRs */}
           <div>
             <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
@@ -139,11 +112,22 @@ function ContributorDetailModal({
             </h4>
             <div className="space-y-2">
               {contributor.recentPRs.map((pr, index) => (
-                <div
+                <a
                   key={index}
-                  className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 text-sm">
-                  <span className="truncate max-w-[280px]">{pr}</span>
-                </div>
+                  href={pr.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 text-sm transition-all duration-200 hover:rounded-none group">
+                  <div className="flex-1 min-w-0 mr-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-xs text-muted-foreground">
+                        #{pr.number}
+                      </span>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <p className="truncate">{pr.title}</p>
+                  </div>
+                </a>
               ))}
             </div>
           </div>
@@ -164,21 +148,21 @@ function ContributorsTab({
   const [sortBy, setSortBy] = useState('loc');
 
   let filteredContributors = contributors.filter((c) =>
-    c.username.toLowerCase().includes(search.toLowerCase()),
+    c.username.toLowerCase().includes(search.toLowerCase())
   );
 
   // Sort contributors
   if (sortBy === 'loc') {
     filteredContributors = [...filteredContributors].sort(
-      (a, b) => b.productionLOC - a.productionLOC,
+      (a, b) => b.productionLOC - a.productionLOC
     );
   } else if (sortBy === 'share') {
     filteredContributors = [...filteredContributors].sort(
-      (a, b) => b.percentShare - a.percentShare,
+      (a, b) => b.percentShare - a.percentShare
     );
   } else if (sortBy === 'name') {
     filteredContributors = [...filteredContributors].sort((a, b) =>
-      a.username.localeCompare(b.username),
+      a.username.localeCompare(b.username)
     );
   }
 
@@ -239,7 +223,7 @@ function ContributorsTab({
                         rank === 1 && 'text-amber-500',
                         rank === 2 && 'text-zinc-400',
                         rank === 3 && 'text-amber-700',
-                        rank > 3 && 'text-muted-foreground',
+                        rank > 3 && 'text-muted-foreground'
                       )}>
                       {rank}
                     </span>
@@ -252,7 +236,7 @@ function ContributorsTab({
                           'ring-2 ring-offset-2 ring-offset-background',
                         rank === 1 && 'ring-amber-500',
                         rank === 2 && 'ring-zinc-400',
-                        rank === 3 && 'ring-amber-700',
+                        rank === 3 && 'ring-amber-700'
                       )}>
                       <AvatarImage
                         src={contributor.avatarUrl}
