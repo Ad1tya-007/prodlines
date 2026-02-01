@@ -50,9 +50,6 @@ export function SettingsPage() {
   // Repository sync settings
   const [autoSync, setAutoSync] = useState(true);
   const [syncFrequency, setSyncFrequency] = useState('hourly');
-  const [excludeBots, setExcludeBots] = useState(true);
-  const [excludeTests, setExcludeTests] = useState(true);
-  const [excludeDocs, setExcludeDocs] = useState(false);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -175,50 +172,6 @@ export function SettingsPage() {
                 </Select>
               </div>
             )}
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="exclude-bots">Exclude bot contributions</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Filter out dependabot, renovate, and other automated commits
-                </p>
-              </div>
-              <Switch
-                id="exclude-bots"
-                checked={excludeBots}
-                onCheckedChange={setExcludeBots}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="exclude-tests">Exclude test files</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Don't count lines in test files (*.test.*, *.spec.*)
-                </p>
-              </div>
-              <Switch
-                id="exclude-tests"
-                checked={excludeTests}
-                onCheckedChange={setExcludeTests}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="exclude-docs">Exclude documentation</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Don't count markdown and documentation files
-                </p>
-              </div>
-              <Switch
-                id="exclude-docs"
-                checked={excludeDocs}
-                onCheckedChange={setExcludeDocs}
-              />
-            </div>
           </div>
 
           <div className="pt-2 flex justify-end">

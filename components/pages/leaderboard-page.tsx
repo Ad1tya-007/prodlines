@@ -80,8 +80,28 @@ function ContributorDetailModal({
                 {contributor.username.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex flex-row items-center gap-2">
               <span className="text-xl">{contributor.username}</span>
+              <a
+                href={`https://github.com/${contributor.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
+                title="View GitHub profile"
+                onClick={(e) => e.stopPropagation()}>
+                <img
+                  src="/GitHub_Invertocat_Black.svg"
+                  alt="GitHub"
+                  className="h-4 w-4 dark:hidden"
+                  aria-hidden
+                />
+                <img
+                  src="/GitHub_Invertocat_White.svg"
+                  alt="GitHub"
+                  className="h-4 w-4 hidden dark:block"
+                  aria-hidden
+                />
+              </a>
             </div>
           </DialogTitle>
           <DialogDescription>

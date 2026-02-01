@@ -44,15 +44,6 @@ import type {
   KPICard,
 } from '@/lib/types/github';
 
-// Filter chips
-const defaultExcludes = [
-  '**/node_modules/**',
-  '**/dist/**',
-  '**/*.min.js',
-  '**/vendor/**',
-];
-const defaultIncludes = ['src/**', 'lib/**', 'components/**'];
-
 function KPICard({ card, index }: { card: KPICard; index: number }) {
   return (
     <Card
@@ -80,7 +71,7 @@ function KPICard({ card, index }: { card: KPICard; index: number }) {
                 'text-xs',
                 card.trendUp
                   ? 'text-green-500 border-green-500/30'
-                  : 'text-red-500 border-red-500/30',
+                  : 'text-red-500 border-red-500/30'
               )}>
               {card.trendUp ? (
                 <TrendingUp className="h-3 w-3 mr-1" />
@@ -131,7 +122,7 @@ function LeaderboardRow({
             rank === 1 && 'text-amber-500',
             rank === 2 && 'text-zinc-400',
             rank === 3 && 'text-amber-700',
-            rank > 3 && 'text-muted-foreground',
+            rank > 3 && 'text-muted-foreground'
           )}>
           {rank}
         </span>
@@ -141,8 +132,12 @@ function LeaderboardRow({
             isTopThree ? 'ring-2 ring-offset-2 ring-offset-background' : '',
             rank === 1 && 'ring-amber-500',
             rank === 2 && 'ring-zinc-400',
-            rank === 3 && 'ring-amber-700',
-          )}>
+            rank === 3 && 'ring-amber-700'
+          )}
+          // onClick={() => {
+          //   window.open(`https://github.com/${contributor.username}`, '_blank');
+          // }}
+        >
           <AvatarImage src={contributor.avatarUrl} alt={contributor.username} />
           <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
             {contributor.username.slice(0, 2).toUpperCase()}
@@ -217,27 +212,6 @@ function LeaderboardSkeleton() {
   );
 }
 
-function FilterChip({
-  label,
-  onRemove,
-}: {
-  label: string;
-  onRemove?: () => void;
-}) {
-  return (
-    <Badge variant="secondary" className="text-xs flex items-center gap-1 pr-1">
-      <span className="font-mono">{label}</span>
-      {onRemove && (
-        <button
-          onClick={onRemove}
-          className="ml-1 h-4 w-4 rounded-sm hover:bg-secondary-foreground/20 flex items-center justify-center">
-          <X className="h-3 w-3" />
-        </button>
-      )}
-    </Badge>
-  );
-}
-
 function EmptyState() {
   return (
     <Card className="hover-card bg-card/50 border-border/50">
@@ -275,11 +249,6 @@ export function OverviewPage({
   repoOwner,
   repoName,
 }: OverviewPageProps) {
-  const [isLoading, setIsLoading] = useState(externalLoading);
-  const [showEmpty, setShowEmpty] = useState(false);
-  const [excludeBots, setExcludeBots] = useState(true);
-  const [excludeTests, setExcludeTests] = useState(true);
-  const [excludeDocs, setExcludeDocs] = useState(true);
   const [lastSyncFormatted, setLastSyncFormatted] =
     useState<string>('Just now');
 
@@ -356,9 +325,8 @@ export function OverviewPage({
       ]
     : [];
 
-  const displayLoading = isLoading || externalLoading;
-  const displayStats =
-    stats && !showEmpty && !error && stats.contributors.length > 0;
+  const displayLoading = externalLoading;
+  const displayStats = stats && !error && stats.contributors.length > 0;
 
   return (
     <div className="space-y-6">
@@ -396,7 +364,7 @@ export function OverviewPage({
         </div>
       )}
 
-      {showEmpty || (!stats && !displayLoading) ? (
+      {!stats && !displayLoading ? (
         <EmptyState />
       ) : displayStats ? (
         <>
