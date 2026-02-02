@@ -101,14 +101,14 @@ function Sidebar({
       <aside
         className={cn(
           'fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-200 ease-out',
-          collapsed ? 'w-16' : 'w-56',
+          collapsed ? 'w-16' : 'w-56'
         )}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div
             className={cn(
               'flex items-center h-16 border-b border-sidebar-border px-4',
-              collapsed ? 'justify-center' : 'justify-between',
+              collapsed ? 'justify-center' : 'justify-between'
             )}>
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center group-hover:rounded-none transition-all duration-200">
@@ -141,7 +141,7 @@ function Sidebar({
                         'flex items-center justify-center h-10 w-10 rounded-xl transition-all duration-200 hover:rounded-none mx-auto',
                         isActive
                           ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                          : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}>
                       <item.icon className="h-5 w-5" />
                     </Link>
@@ -158,7 +158,7 @@ function Sidebar({
                     'flex items-center gap-3 px-3 h-10 rounded-xl transition-all duration-200 hover:rounded-none group',
                     isActive
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                   )}>
                   <item.icon className="h-5 w-5 icon-hover" />
                   <span className="text-sm font-medium">{item.label}</span>
@@ -244,7 +244,7 @@ function MobileNav() {
                   'flex items-center gap-3 px-3 h-10 rounded-xl transition-all duration-200 hover:rounded-none',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}>
                 <item.icon className="h-5 w-5" />
                 <span className="text-sm font-medium">{item.label}</span>
@@ -261,7 +261,6 @@ function TopBar({
   sidebarCollapsed,
   user,
   profile,
-  currentRepo,
 }: {
   sidebarCollapsed: boolean;
   user: SupabaseUser | null;
@@ -272,7 +271,7 @@ function TopBar({
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
 
   // Prevent hydration mismatch for theme
   useEffect(() => {
@@ -281,7 +280,7 @@ function TopBar({
 
   // Get selected repository from Redux
   const selectedRepository = useAppSelector(
-    (state) => state.repository.selectedRepository,
+    (state) => state.repository.selectedRepository
   );
 
   // Use React Query for repositories
@@ -348,7 +347,7 @@ function TopBar({
     <header
       className={cn(
         'fixed top-0 right-0 z-30 h-16 bg-background/80 backdrop-blur-sm border-b border-border transition-all duration-200',
-        sidebarCollapsed ? 'left-0 md:left-16' : 'left-0 md:left-56',
+        sidebarCollapsed ? 'left-0 md:left-16' : 'left-0 md:left-56'
       )}>
       <div className="flex items-center justify-between h-full px-4 md:px-6">
         <div className="flex items-center gap-4">
@@ -387,31 +386,9 @@ function TopBar({
               </Link>
             </Button>
           )}
-
-          {/* Search */}
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search contributors, files..."
-              className="w-64 pl-9 bg-secondary/50 border-border/50 focus:bg-secondary"
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Sync button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="hover-button hidden sm:flex bg-transparent"
-            onClick={handleSync}
-            disabled={syncing}>
-            <RefreshCw
-              className={cn('h-4 w-4 mr-2', syncing && 'animate-spin')}
-            />
-            {syncing ? 'Syncing...' : 'Sync'}
-          </Button>
-
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="hover-button relative">
             <Bell className="h-5 w-5" />
@@ -516,7 +493,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Get selected repository from Redux
   const selectedRepository = useAppSelector(
-    (state) => state.repository.selectedRepository,
+    (state) => state.repository.selectedRepository
   );
 
   useEffect(() => {
@@ -563,7 +540,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main
         className={cn(
           'pt-16 transition-all duration-200',
-          sidebarCollapsed ? 'md:pl-16' : 'md:pl-56',
+          sidebarCollapsed ? 'md:pl-16' : 'md:pl-56'
         )}>
         <div className="p-4 md:p-6 lg:p-8 animate-fade-in">{children}</div>
       </main>

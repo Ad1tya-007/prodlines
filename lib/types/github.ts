@@ -13,8 +13,20 @@ export interface GitHubContributor {
   avatarUrl: string;
   productionLOC: number;
   percentShare: number;
-  trend: 'up' | 'down' | 'neutral';
-  trendValue: number;
+  commits: number;
+  additions: number;
+  deletions: number;
+  filesTouchedCount: number;
+  prsMerged: number;
+  prsClosed: number;
+  prMergeRate: number;
+  avgPrSize: number;
+  avgTimeToMergeHours: number;
+  lastActivityAt: string | null;
+  firstActivityAt: string | null;
+  recentCommits: number;
+  recentMergedPrs: number;
+  contributions: number;
   topFiles: string[];
   recentPRs: PullRequest[];
 }
@@ -23,7 +35,6 @@ export interface GitHubStats {
   productionLOC: number;
   activeContributors: number;
   lastSync: string;
-  excludedLOC: number;
   contributors: GitHubContributor[];
 }
 

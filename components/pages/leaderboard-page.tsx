@@ -25,17 +25,12 @@ import {
   Clock,
   Share2,
   Search,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  FileCode,
   GitPullRequest,
   Users,
   Check,
   ChevronRight,
   ArrowUpDown,
   ExternalLink,
-  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GitHubStats, GitHubContributor } from '@/lib/types/github';
@@ -64,7 +59,14 @@ function ContributorDetailModal({
 }) {
   if (!contributor) return null;
 
-  console.log(contributor);
+  const formatDate = (value: string | null) => {
+    if (!value) return '—';
+    try {
+      return new Date(value).toLocaleDateString();
+    } catch {
+      return value;
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -108,7 +110,7 @@ function ContributorDetailModal({
             Contributor details and ownership breakdown
           </DialogDescription>
 
-          <div className=" gap-4 grid grid-cols-2">
+          <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 rounded-xl bg-secondary/50">
               <p className="text-2xl font-bold">{contributor.percentShare}%</p>
               <p className="text-xs text-muted-foreground">Ownership</p>
@@ -120,15 +122,73 @@ function ContributorDetailModal({
               </p>
               <p className="text-xs text-muted-foreground">Production LOC</p>
             </div>
+            <div className="text-center p-3 rounded-xl bg-secondary/50">
+              <p className="text-2xl font-bold">{contributor.commits}</p>
+              <p className="text-xs text-muted-foreground">Commits</p>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-secondary/50">
+              <p className="text-2xl font-bold">{contributor.prsClosed}</p>
+              <p className="text-xs text-muted-foreground">PRs closed</p>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-secondary/50">
+              <p className="text-2xl font-bold">{contributor.prsMerged}</p>
+              <p className="text-xs text-muted-foreground">PRs merged</p>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-secondary/50">
+              <p className="text-2xl font-bold">
+                {formatDate(contributor.lastActivityAt)}
+              </p>
+              <p className="text-xs text-muted-foreground">Last active</p>
+            </div>
           </div>
         </DialogHeader>
+
+        {/* Activity details */}
+        <div>
+          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+            <GitPullRequest className="h-4 w-4 text-muted-foreground" />
+            Activity breakdown
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Additions</p>
+              <p className="font-mono">
+                {contributor.additions.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Deletions</p>
+              <p className="font-mono">
+                {contributor.deletions.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Files touched</p>
+              <p className="font-mono">{contributor.filesTouchedCount}</p>
+            </div>
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Merge rate</p>
+              <p className="font-mono">{contributor.prMergeRate}%</p>
+            </div>
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Avg PR size</p>
+              <p className="font-mono">
+                {contributor.avgPrSize.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-lg bg-secondary/30 p-3">
+              <p className="text-xs text-muted-foreground">Avg time to merge</p>
+              <p className="font-mono">{contributor.avgTimeToMergeHours}h</p>
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-6 py-4">
           {/* Recent PRs */}
           <div>
             <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
               <GitPullRequest className="h-4 w-4 text-muted-foreground" />
-              Recent merged PRs
+              Recent 3 merged PRs
             </h4>
             <div className="space-y-2">
               {contributor.recentPRs.map((pr, index) => (
@@ -180,6 +240,10 @@ function ContributorsTab({
     filteredContributors = [...filteredContributors].sort(
       (a, b) => b.percentShare - a.percentShare
     );
+  } else if (sortBy === 'contributions') {
+    filteredContributors = [...filteredContributors].sort(
+      (a, b) => b.contributions - a.contributions
+    );
   } else if (sortBy === 'name') {
     filteredContributors = [...filteredContributors].sort((a, b) =>
       a.username.localeCompare(b.username)
@@ -207,7 +271,7 @@ function ContributorsTab({
           <SelectContent>
             <SelectItem value="loc">Production LOC</SelectItem>
             <SelectItem value="share">% Share</SelectItem>
-            <SelectItem value="trend">Trend</SelectItem>
+            <SelectItem value="contributions">Contributions</SelectItem>
             <SelectItem value="name">Name</SelectItem>
           </SelectContent>
         </Select>
@@ -222,7 +286,7 @@ function ContributorsTab({
             <div className="col-span-4">Contributor</div>
             <div className="col-span-3 text-right">Production LOC</div>
             <div className="col-span-2 text-right">Share</div>
-            <div className="col-span-2 text-right">Trend</div>
+            <div className="col-span-2 text-right">Contributions</div>
           </div>
 
           {/* Rows */}
@@ -286,25 +350,9 @@ function ContributorsTab({
                     </Badge>
                   </div>
                   <div className="col-span-2 flex items-center justify-end gap-1">
-                    {contributor.trend === 'up' && (
-                      <>
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <span className="text-xs text-green-500">
-                          +{contributor.trendValue}%
-                        </span>
-                      </>
-                    )}
-                    {contributor.trend === 'down' && (
-                      <>
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                        <span className="text-xs text-red-500">
-                          -{contributor.trendValue}%
-                        </span>
-                      </>
-                    )}
-                    {contributor.trend === 'neutral' && (
-                      <Minus className="h-4 w-4 text-muted-foreground" />
-                    )}
+                    <span className="font-mono">
+                      {contributor.contributions}
+                    </span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
                   </div>
                 </button>

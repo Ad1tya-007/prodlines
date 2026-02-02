@@ -11,31 +11,19 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Code2,
   Users,
   Clock,
-  FileX,
   TrendingUp,
   TrendingDown,
-  Minus,
-  X,
   Plus,
-  Info,
   GitBranch,
   ChevronRight,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type {
@@ -133,11 +121,7 @@ function LeaderboardRow({
             rank === 1 && 'ring-amber-500',
             rank === 2 && 'ring-zinc-400',
             rank === 3 && 'ring-amber-700'
-          )}
-          // onClick={() => {
-          //   window.open(`https://github.com/${contributor.username}`, '_blank');
-          // }}
-        >
+          )}>
           <AvatarImage src={contributor.avatarUrl} alt={contributor.username} />
           <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
             {contributor.username.slice(0, 2).toUpperCase()}
@@ -145,11 +129,6 @@ function LeaderboardRow({
         </Avatar>
         <div>
           <p className="font-medium">{contributor.username}</p>
-          {isTopThree && (
-            <p className="text-xs text-muted-foreground">
-              {contributor.topFiles[0]?.split('/').pop()}
-            </p>
-          )}
         </div>
       </div>
       <div className="flex items-center gap-6">
@@ -164,26 +143,9 @@ function LeaderboardRow({
             {contributor.percentShare}%
           </Badge>
         </div>
-        <div className="w-16 flex items-center justify-end gap-1">
-          {contributor.trend === 'up' && (
-            <>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-green-500">
-                +{contributor.trendValue}%
-              </span>
-            </>
-          )}
-          {contributor.trend === 'down' && (
-            <>
-              <TrendingDown className="h-4 w-4 text-red-500" />
-              <span className="text-xs text-red-500">
-                -{contributor.trendValue}%
-              </span>
-            </>
-          )}
-          {contributor.trend === 'neutral' && (
-            <Minus className="h-4 w-4 text-muted-foreground" />
-          )}
+        <div className="text-right hidden sm:block">
+          <p className="font-mono text-sm">{contributor.contributions}</p>
+          <p className="text-xs text-muted-foreground">Contributions</p>
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
@@ -307,20 +269,22 @@ export function OverviewPage({
           trendUp: true,
         },
         {
+          title: 'Merged PRs',
+          value: stats.contributors
+            .reduce((sum, contributor) => sum + contributor.recentMergedPrs, 0)
+            .toString(),
+          description: 'Last 30 days',
+          icon: GitBranch,
+          trend: null,
+          trendUp: null,
+        },
+        {
           title: 'Last Sync',
           value: lastSyncFormatted,
           description: 'Auto-sync enabled',
           icon: Clock,
           trend: null,
           trendUp: null,
-        },
-        {
-          title: 'Excluded LOC',
-          value: stats.excludedLOC.toLocaleString(),
-          description: 'Tests, docs, generated',
-          icon: FileX,
-          trend: '-5.1%',
-          trendUp: false,
         },
       ]
     : [];
@@ -342,9 +306,12 @@ export function OverviewPage({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.reload()}
-            className="hover-button bg-transparent">
-            {displayLoading ? 'Loading...' : 'Refresh'}
+            className="hover-button hidden sm:flex bg-transparent"
+            onClick={() => window.location.reload()}>
+            <RefreshCw
+              className={cn('h-4 w-4 mr-2', displayLoading && 'animate-spin')}
+            />
+            {displayLoading ? 'Syncing...' : 'Sync'}
           </Button>
         </div>
       </div>
