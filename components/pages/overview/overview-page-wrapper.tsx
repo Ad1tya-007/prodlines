@@ -7,7 +7,7 @@ import { useAppSelector } from '@/lib/store/hooks';
 export function OverviewPageWrapper() {
   // Get selected repository from Redux
   const selectedRepository = useAppSelector(
-    (state) => state.repository.selectedRepository,
+    (state) => state.repository.selectedRepository
   );
 
   // Fetch GitHub stats using React Query
@@ -22,7 +22,7 @@ export function OverviewPageWrapper() {
       repo: selectedRepository?.name || '',
       branch: selectedRepository?.default_branch || 'main',
     },
-    { enabled: !!selectedRepository },
+    { enabled: !!selectedRepository }
   );
 
   // If no repository is selected, pass null for stats to show empty state
