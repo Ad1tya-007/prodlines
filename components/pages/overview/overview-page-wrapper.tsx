@@ -15,7 +15,9 @@ export function OverviewPageWrapper() {
   const {
     data: stats,
     isLoading,
+    isFetching,
     error,
+    refetch,
   } = useGitHubStats(
     {
       owner: selectedRepository?.owner || '',
@@ -25,14 +27,15 @@ export function OverviewPageWrapper() {
     { enabled: !!selectedRepository }
   );
 
-  // If no repository is selected, pass null for stats to show empty state
   return (
     <OverviewPage
       stats={selectedRepository ? stats || null : null}
       isLoading={selectedRepository ? isLoading : false}
+      isFetching={selectedRepository ? isFetching : false}
       error={error ? (error as Error).message : null}
       repoOwner={selectedRepository?.owner || 'No repository'}
       repoName={selectedRepository?.name || 'selected'}
+      onSync={selectedRepository ? () => refetch() : undefined}
     />
   );
 }

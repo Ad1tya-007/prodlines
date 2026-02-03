@@ -9,13 +9,19 @@ import { KPICard, KPICardSkeleton } from './kpi-card';
 import { OverviewLeaderboard } from './overview-leaderboard';
 import { OverviewEmptyState } from './overview-empty-state';
 import { OverviewErrorState, OverviewLoadingState } from './overview-states';
+import { toast } from 'sonner';
+
+const resultHasError = (result: unknown): result is { error?: unknown } =>
+  typeof result === 'object' && result !== null && 'error' in result;
 
 interface OverviewPageProps {
   stats: GitHubStats | null;
   isLoading?: boolean;
+  isFetching?: boolean;
   error?: string | null;
   repoOwner?: string;
   repoName?: string;
+  onSync?: () => Promise<unknown>;
 }
 
 function formatLastSync(lastSync: string) {
@@ -41,9 +47,11 @@ function formatLastSync(lastSync: string) {
 export function OverviewPage({
   stats,
   isLoading: externalLoading = false,
+  isFetching = false,
   error,
   repoOwner,
   repoName,
+  onSync,
 }: OverviewPageProps) {
   const [lastSyncFormatted, setLastSyncFormatted] =
     useState<string>('Just now');
@@ -99,8 +107,30 @@ export function OverviewPage({
       ]
     : [];
 
-  const displayLoading = externalLoading;
+  const isInitialLoading = externalLoading && !stats;
+  const isSyncing = !!stats && isFetching;
+  const buttonLoading = isInitialLoading || isSyncing;
   const displayStats = stats && !error && stats.contributors.length > 0;
+
+  const handleSync = async () => {
+    if (!onSync) return;
+
+    const toastId = toast.loading('Syncing latest stats...');
+
+    try {
+      const result = await onSync();
+      if (resultHasError(result) && result.error) {
+        throw result.error;
+      }
+      toast.success('Repository synced successfully!', { id: toastId });
+    } catch (syncError) {
+      const message =
+        syncError instanceof Error
+          ? syncError.message
+          : 'Failed to sync repository';
+      toast.error(message, { id: toastId });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -116,25 +146,31 @@ export function OverviewPage({
             variant="outline"
             size="sm"
             className="hover-button hidden sm:flex bg-transparent"
-            onClick={() => window.location.reload()}>
+            onClick={handleSync}
+            disabled={!onSync || buttonLoading}>
             <RefreshCw
-              className={cn('h-4 w-4 mr-2', displayLoading && 'animate-spin')}
+              className={cn('h-4 w-4 mr-2', buttonLoading && 'animate-spin')}
             />
-            {displayLoading ? 'Syncing...' : 'Sync'}
+            {buttonLoading ? 'Syncing...' : 'Sync'}
           </Button>
+          {isSyncing && (
+            <span className="hidden sm:inline text-xs text-muted-foreground">
+              Refreshing latest stats...
+            </span>
+          )}
         </div>
       </div>
 
       {error && <OverviewErrorState error={error} />}
 
-      {displayLoading && <OverviewLoadingState />}
+      {isInitialLoading && <OverviewLoadingState />}
 
-      {!stats && !displayLoading ? (
+      {!stats && !isInitialLoading ? (
         <OverviewEmptyState />
       ) : displayStats ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {displayLoading
+            {isInitialLoading
               ? [...Array(4)].map((_, i) => <KPICardSkeleton key={i} />)
               : kpiCards.map((card, index) => (
                   <KPICard key={card.title} card={card} index={index} />
@@ -143,7 +179,7 @@ export function OverviewPage({
 
           <OverviewLeaderboard
             contributors={stats.contributors}
-            isLoading={displayLoading}
+            isLoading={isInitialLoading}
           />
         </>
       ) : null}
