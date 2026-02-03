@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -28,6 +29,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { GitBranch } from 'lucide-react';
+import {
+  useUserSettings,
+  useUpdateRepositorySyncSettings,
+} from '@/lib/hooks/use-user-settings';
+import { toast } from 'sonner';
 
 const repositorySyncSchema = z.object({
   autoSync: z.boolean(),
@@ -37,19 +43,80 @@ const repositorySyncSchema = z.object({
 type RepositorySyncValues = z.infer<typeof repositorySyncSchema>;
 
 export function RepositorySyncForm() {
+  const { data: settings, isLoading, isError, error } = useUserSettings();
+  const updateMutation = useUpdateRepositorySyncSettings();
   const form = useForm<RepositorySyncValues>({
     resolver: zodResolver(repositorySyncSchema),
     defaultValues: {
-      autoSync: true,
+      autoSync: false,
       syncFrequency: 'hourly',
     },
   });
 
+  useEffect(() => {
+    if (!settings) return;
+    form.reset({
+      autoSync: settings.auto_sync,
+      syncFrequency:
+        settings.sync_frequency as RepositorySyncValues['syncFrequency'],
+    });
+  }, [settings, form]);
+
   const autoSync = form.watch('autoSync');
 
-  function onSubmit(data: RepositorySyncValues) {
-    console.log('Repository sync preferences:', data);
-    // TODO: Save to backend
+  async function onSubmit(data: RepositorySyncValues) {
+    try {
+      await updateMutation.mutateAsync({
+        autoSync: data.autoSync,
+        syncFrequency: data.syncFrequency,
+      });
+      toast.success('Repository sync preferences saved');
+    } catch {
+      toast.error('Failed to save preferences');
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="hover-card bg-card/50 border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+              <GitBranch className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Repository Sync</CardTitle>
+              <CardDescription>
+                Configure how your repositories are synced
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Loading preferences…</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="hover-card bg-card/50 border-border/50">
+        <CardHeader>
+          <CardTitle>Repository Sync</CardTitle>
+          <CardDescription>
+            Configure how your repositories are synced
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-destructive">
+            {error instanceof Error
+              ? error.message
+              : 'Failed to load preferences'}
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -126,8 +193,11 @@ export function RepositorySyncForm() {
             )}
 
             <div className="pt-2 flex justify-end">
-              <Button type="submit" className="hover-button">
-                Save preferences
+              <Button
+                type="submit"
+                className="hover-button"
+                disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Saving…' : 'Save preferences'}
               </Button>
             </div>
           </form>

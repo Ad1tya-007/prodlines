@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -20,8 +21,23 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useDeleteAccount } from '@/lib/hooks/use-user-settings';
+import { toast } from 'sonner';
 
 export function DangerZone() {
+  const deleteMutation = useDeleteAccount();
+  const [open, setOpen] = useState(false);
+
+  async function handleDelete() {
+    try {
+      await deleteMutation.mutateAsync();
+      setOpen(false);
+    } catch {
+      toast.error('Failed to delete account');
+      setOpen(false);
+    }
+  }
+
   return (
     <Card className="hover-card bg-card/50 border-destructive/30">
       <CardHeader>
@@ -45,7 +61,7 @@ export function DangerZone() {
               Permanently delete your account and all associated data
             </p>
           </div>
-          <AlertDialog>
+          <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
@@ -70,11 +86,21 @@ export function DangerZone() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="hover-button">
+                <AlertDialogCancel
+                  className="hover-button"
+                  disabled={deleteMutation.isPending}>
                   Cancel
                 </AlertDialogCancel>
-                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button">
-                  Yes, delete my account
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover-button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                  }}
+                  disabled={deleteMutation.isPending}>
+                  {deleteMutation.isPending
+                    ? 'Deleting…'
+                    : 'Yes, delete my account'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

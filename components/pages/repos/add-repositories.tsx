@@ -79,14 +79,12 @@ export function AddRepositories() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold">Add repositories</h2>
-        <p className="text-muted-foreground mt-2">
-          Choose which repositories to track for production code ownership.
-        </p>
-      </div>
+      <h2 className="text-2xl font-bold">Add repositories</h2>
+      <p className="text-muted-foreground">
+        Choose which repositories to track for production code ownership.
+      </p>
 
-      <div className="relative max-w-md mx-auto">
+      <div className="relative mx-auto">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search repositories..."

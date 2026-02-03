@@ -14,10 +14,11 @@ export function SettingsPage() {
           Manage your account preferences and settings
         </p>
       </div>
-
-      <RepositorySyncForm />
-      <NotificationsForm />
-      <DangerZone />
+      <div className="space-y-2">
+        <RepositorySyncForm />
+        <NotificationsForm />
+        <DangerZone />
+      </div>
     </div>
   );
 }

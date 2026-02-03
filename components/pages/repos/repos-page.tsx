@@ -16,7 +16,7 @@ export function ReposPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="add" className="space-y-6">
+      <Tabs defaultValue="add" className="space-y-2">
         <TabsList className="bg-secondary/50 p-1">
           <TabsTrigger
             value="add"
@@ -32,17 +32,21 @@ export function ReposPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="add" className="mt-6">
+        <TabsContent
+          value="add"
+          className="data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-300">
           <Card className="hover-card bg-card/50 border-border/50">
-            <CardContent className="p-6 sm:p-8">
+            <CardContent className="">
               <AddRepositories />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="manage" className="mt-6">
+        <TabsContent
+          value="manage"
+          className="data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-300">
           <Card className="hover-card bg-card/50 border-border/50">
-            <CardContent className="p-6 sm:p-8">
+            <CardContent className="">
               <ManageRepositories />
             </CardContent>
           </Card>
