@@ -19,7 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GitBranch, Bell, Loader2, LogOut, User, Settings, Sun, Moon } from 'lucide-react';
+import {
+  GitBranch,
+  Loader2,
+  LogOut,
+  User,
+  Settings,
+  Sun,
+  Moon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSavedRepositories } from '@/lib/hooks/use-repositories';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
@@ -31,6 +39,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Profile } from '@/lib/supabase/profiles-client';
 import { useTheme } from 'next-themes';
 import { MobileNav } from './mobile-nav';
+import { NotificationsDropdown } from './notifications-dropdown';
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
@@ -144,10 +153,7 @@ export function TopBar({ sidebarCollapsed, user, profile }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="hover-button relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
-          </Button>
+          <NotificationsDropdown />
 
           {mounted && (
             <DropdownMenu>
@@ -213,7 +219,9 @@ export function TopBar({ sidebarCollapsed, user, profile }: TopBarProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive"
-                onSelect={(e) => handleSignOut(e as React.MouseEvent)}
+                onSelect={(e) =>
+                  handleSignOut(e as unknown as React.MouseEvent)
+                }
                 disabled={loggingOut}>
                 {loggingOut ? (
                   <>

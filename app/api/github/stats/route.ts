@@ -70,6 +70,16 @@ export async function GET(request: Request) {
 
     if (upsertError) {
       console.error('Error saving github_stats:', upsertError)
+    } else {
+      const fullName = `${owner}/${repo}`
+      const message = `Stats synced for ${fullName}`
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        type: 'github_stats_synced',
+        message,
+        metadata: { owner, repo, branch },
+        seen: false,
+      })
     }
 
     return NextResponse.json(stats)

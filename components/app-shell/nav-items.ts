@@ -3,6 +3,7 @@ import {
   GitBranch,
   Trophy,
   Settings,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -17,5 +18,6 @@ export const navItems: NavItem[] = [
   { id: 'overview', href: '/app/overview', icon: LayoutDashboard, label: 'Overview' },
   { id: 'repos', href: '/app/repos', icon: GitBranch, label: 'Repos' },
   { id: 'leaderboards', href: '/app/leaderboard', icon: Trophy, label: 'Leaderboards' },
+  { id: 'events', href: '/app/events', icon: Activity, label: 'Events' },
   { id: 'settings', href: '/app/settings', icon: Settings, label: 'Settings' },
 ];

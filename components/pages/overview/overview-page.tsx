@@ -115,20 +115,18 @@ export function OverviewPage({
   const handleSync = async () => {
     if (!onSync) return;
 
-    const toastId = toast.loading('Syncing latest stats...');
-
     try {
       const result = await onSync();
       if (resultHasError(result) && result.error) {
         throw result.error;
       }
-      toast.success('Repository synced successfully!', { id: toastId });
+      toast.success('Repository synced successfully!');
     } catch (syncError) {
       const message =
         syncError instanceof Error
           ? syncError.message
           : 'Failed to sync repository';
-      toast.error(message, { id: toastId });
+      toast.error(message);
     }
   };
 

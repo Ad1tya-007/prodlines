@@ -5,7 +5,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { QueryProvider } from '@/lib/providers/query-provider';
 import { ReduxProvider } from '@/lib/providers/redux-provider';
 import './globals.css';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 
 const _geist = Geist({ subsets: ['latin'] });
