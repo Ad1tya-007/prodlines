@@ -11,11 +11,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Try to get provider token from session (GitHub OAuth token)
+    const { searchParams } = new URL(request.url)
+    const owner = searchParams.get('owner') || ''
+    const repo = searchParams.get('repo') || ''
+    const branch = searchParams.get('branch') || 'main'
+    const sync = searchParams.get('sync') === 'true'
+
+    if (!owner || !repo) {
+      return NextResponse.json(
+        { error: 'owner and repo are required' },
+        { status: 400 }
+      )
+    }
+
+    const { data: cached, error } = await supabase
+      .from('github_stats')
+      .select('stats')
+      .eq('user_id', user.id)
+      .eq('owner', owner)
+      .eq('repo', repo)
+      .eq('branch', branch)
+      .single()
+
+    if (!sync && !error && cached?.stats) {
+      return NextResponse.json(cached.stats)
+    }
+
     const { data: { session } } = await supabase.auth.getSession()
     const providerToken = session?.provider_token
-
-    // Fallback to environment variable if provider token is not available
     const githubToken = providerToken || process.env.GITHUB_TOKEN
 
     if (!githubToken) {
@@ -25,12 +48,29 @@ export async function GET(request: Request) {
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const owner = searchParams.get('owner') || 'vercel'
-    const repo = searchParams.get('repo') || 'next.js'
-    const branch = searchParams.get('branch') || 'main'
+    const stats = await fetchGitHubStats(owner, repo, branch, githubToken)
 
-    const stats = await fetchGitHubStats(owner, repo, branch, githubToken as string)
+    const { error: upsertError } = await supabase
+      .from('github_stats')
+      .upsert(
+        {
+          user_id: user.id,
+          owner,
+          repo,
+          branch,
+          stats,
+          last_synced_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,owner,repo,branch',
+          ignoreDuplicates: false,
+        }
+      )
+
+    if (upsertError) {
+      console.error('Error saving github_stats:', upsertError)
+    }
 
     return NextResponse.json(stats)
   } catch (error) {

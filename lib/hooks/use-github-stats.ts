@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { GitHubStats } from '@/lib/types/github';
 
 interface GitHubStatsParams {
@@ -7,18 +7,29 @@ interface GitHubStatsParams {
   branch?: string;
 }
 
-async function fetchGitHubStats({
-  owner,
-  repo,
-  branch = 'main',
-}: GitHubStatsParams): Promise<GitHubStats> {
-  const params = new URLSearchParams({
+export const githubStatsQueryKey = (params: {
+  owner: string;
+  repo: string;
+  branch?: string;
+}) => ['github-stats', params.owner, params.repo, params.branch ?? 'main'] as const;
+
+async function fetchGitHubStats(
+  params: GitHubStatsParams,
+  sync: boolean
+): Promise<GitHubStats | null> {
+  const { owner, repo, branch = 'main' } = params;
+  const searchParams = new URLSearchParams({
     owner,
     repo,
     branch,
+    ...(sync && { sync: 'true' }),
   });
 
-  const response = await fetch(`/api/github/stats?${params}`);
+  const response = await fetch(`/api/github/stats?${searchParams}`);
+
+  if (response.status === 404) {
+    return null;
+  }
 
   if (!response.ok) {
     const errorData = await response
@@ -27,20 +38,39 @@ async function fetchGitHubStats({
     throw new Error(errorData.error || 'Failed to fetch GitHub stats');
   }
 
-  const data = await response.json();
-  return data;
+  return response.json();
 }
 
 export function useGitHubStats(
   params: GitHubStatsParams,
   options?: {
     enabled?: boolean;
-  },
+    sync?: boolean;
+  }
 ) {
+  const sync = options?.sync ?? false;
   return useQuery({
-    queryKey: ['github-stats', params.owner, params.repo, params.branch],
-    queryFn: () => fetchGitHubStats(params),
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    queryKey: githubStatsQueryKey(params),
+    queryFn: () => fetchGitHubStats(params, sync),
+    staleTime: 3 * 60 * 1000,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useSyncGitHubStats(params: GitHubStatsParams) {
+  const queryClient = useQueryClient();
+  const fullParams = { ...params, branch: params.branch ?? 'main' };
+
+  return useMutation({
+    mutationFn: async () => {
+      const result = await fetchGitHubStats(fullParams, true);
+      if (!result) throw new Error('Failed to sync GitHub stats');
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: githubStatsQueryKey(fullParams),
+      });
+    },
   });
 }
