@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { BarChart3, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { navItems } from './nav-items';
@@ -24,7 +29,7 @@ export function MobileNav() {
             <div className="w-8 h-8 bg-foreground rounded-lg flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-background" />
             </div>
-            <span className="font-semibold">ProdLines</span>
+            <SheetTitle>ProdLines</SheetTitle>
           </Link>
         </div>
         <nav className="py-4 px-3 space-y-1">

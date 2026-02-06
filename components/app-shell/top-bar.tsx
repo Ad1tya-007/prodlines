@@ -124,7 +124,7 @@ export function TopBar({ sidebarCollapsed, user, profile }: TopBarProps) {
             <Select
               value={selectedRepository?.full_name || ''}
               onValueChange={handleRepoChange}>
-              <SelectTrigger className="w-48 md:w-56 hover-button bg-secondary/50 border-border/50">
+              <SelectTrigger className="w-64 hover-button bg-secondary/50 border-border/50">
                 <SelectValue placeholder="Select repository" />
               </SelectTrigger>
               <SelectContent>
@@ -152,8 +152,10 @@ export function TopBar({ sidebarCollapsed, user, profile }: TopBarProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <NotificationsDropdown />
+        <div className="items-center gap-3 flex">
+          <div className="hidden sm:block">
+            <NotificationsDropdown />
+          </div>
 
           {mounted && (
             <DropdownMenu>
