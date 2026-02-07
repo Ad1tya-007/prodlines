@@ -49,6 +49,24 @@ export interface UpdateNotificationSettingsInput {
   discordNotifications: boolean;
 }
 
+export function useUpdateDiscordWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (webhookUrl: string | null) => {
+      const updates: UserSettingsUpdate = {
+        discord_webhook_url: webhookUrl,
+      };
+      const result = await updateCurrentUserSettings(updates);
+      if (!result) throw new Error('Failed to update Discord webhook');
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userSettingsQueryKey });
+    },
+  });
+}
+
 export function useUpdateNotificationSettings() {
   const queryClient = useQueryClient();
 

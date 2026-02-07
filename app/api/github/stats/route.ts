@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { fetchGitHubStats } from '@/lib/github/stats'
 import { sendStatsSyncedEmail } from '@/lib/email'
+import { sendDiscordWebhook } from '@/lib/discord'
 
 export async function GET(request: Request) {
   try {
@@ -84,7 +85,7 @@ export async function GET(request: Request) {
 
       const { data: userSettings } = await supabase
         .from('user_settings')
-        .select('email_notifications')
+        .select('email_notifications, discord_notifications, discord_webhook_url')
         .eq('id', user.id)
         .single()
 
@@ -98,6 +99,16 @@ export async function GET(request: Request) {
         if (recipientEmail) {
           await sendStatsSyncedEmail(recipientEmail, fullName)
         }
+      }
+
+      if (
+        userSettings?.discord_notifications &&
+        userSettings?.discord_webhook_url
+      ) {
+        await sendDiscordWebhook(
+          userSettings.discord_webhook_url,
+          `📊 **Stats synced**\nYour GitHub stats have been synced for **${fullName}**.\nView your updated leaderboard in ProdLines.`
+        )
       }
     }
 

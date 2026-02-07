@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { isValidDiscordWebhookUrl } from '@/lib/discord';
 
 // GET: Fetch current user's settings
 export async function GET() {
@@ -51,9 +52,39 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
 
+    const ALLOWED_KEYS = [
+      'email_notifications',
+      'slack_notifications',
+      'discord_notifications',
+      'discord_webhook_url',
+      'auto_sync',
+      'sync_frequency',
+    ] as const;
+
+    const updates: Record<string, unknown> = {};
+    for (const key of ALLOWED_KEYS) {
+      if (key in body) {
+        const value = body[key];
+        if (key === 'discord_webhook_url') {
+          if (value === null || value === '') {
+            updates[key] = null;
+          } else if (typeof value === 'string' && isValidDiscordWebhookUrl(value)) {
+            updates[key] = value.trim();
+          } else {
+            return NextResponse.json(
+              { error: 'Invalid Discord webhook URL format' },
+              { status: 400 }
+            );
+          }
+        } else {
+          updates[key] = value;
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('user_settings')
-      .update(body)
+      .update(updates)
       .eq('id', user.id)
       .select()
       .single();

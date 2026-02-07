@@ -5,6 +5,7 @@ export interface UserSettings {
   email_notifications: boolean;
   slack_notifications: boolean;
   discord_notifications: boolean;
+  discord_webhook_url: string | null;
   auto_sync: boolean;
   sync_frequency: SyncFrequency;
   created_at: string;
@@ -15,6 +16,7 @@ export interface UserSettingsUpdate {
   email_notifications?: boolean;
   slack_notifications?: boolean;
   discord_notifications?: boolean;
+  discord_webhook_url?: string | null;
   auto_sync?: boolean;
   sync_frequency?: SyncFrequency;
 }

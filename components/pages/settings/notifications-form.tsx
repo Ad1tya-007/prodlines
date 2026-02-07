@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -12,6 +12,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -22,11 +31,13 @@ import {
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Bell, Check, ExternalLink, Mail, MessageSquare, Zap } from 'lucide-react';
 import {
   useUserSettings,
   useUpdateNotificationSettings,
+  useUpdateDiscordWebhook,
 } from '@/lib/hooks/use-user-settings';
+import { isValidDiscordWebhookUrl } from '@/lib/discord';
 import { toast } from 'sonner';
 
 const notificationsSchema = z.object({
@@ -40,6 +51,9 @@ type NotificationsValues = z.infer<typeof notificationsSchema>;
 export function NotificationsForm() {
   const { data: settings, isLoading, isError, error } = useUserSettings();
   const updateMutation = useUpdateNotificationSettings();
+  const discordWebhookMutation = useUpdateDiscordWebhook();
+  const [discordDialogOpen, setDiscordDialogOpen] = useState(false);
+  const [discordWebhookInput, setDiscordWebhookInput] = useState('');
   const form = useForm<NotificationsValues>({
     resolver: zodResolver(notificationsSchema),
     defaultValues: {
@@ -60,6 +74,41 @@ export function NotificationsForm() {
 
   const slackNotifications = form.watch('slackNotifications');
   const discordNotifications = form.watch('discordNotifications');
+  const discordWebhookConfigured = Boolean(settings?.discord_webhook_url);
+
+  function openDiscordDialog() {
+    setDiscordWebhookInput(settings?.discord_webhook_url ?? '');
+    setDiscordDialogOpen(true);
+  }
+
+  async function saveDiscordWebhook() {
+    const trimmed = discordWebhookInput.trim();
+    if (!trimmed) {
+      toast.error('Please enter a webhook URL');
+      return;
+    }
+    if (!isValidDiscordWebhookUrl(trimmed)) {
+      toast.error('Invalid webhook URL. It should look like https://discord.com/api/webhooks/...');
+      return;
+    }
+    try {
+      await discordWebhookMutation.mutateAsync(trimmed);
+      toast.success('Discord webhook connected');
+      setDiscordDialogOpen(false);
+    } catch {
+      toast.error('Failed to save webhook');
+    }
+  }
+
+  async function disconnectDiscord() {
+    try {
+      await discordWebhookMutation.mutateAsync(null);
+      toast.success('Discord webhook disconnected');
+      setDiscordDialogOpen(false);
+    } catch {
+      toast.error('Failed to disconnect');
+    }
+  }
 
   async function onSubmit(data: NotificationsValues) {
     try {
@@ -231,17 +280,108 @@ export function NotificationsForm() {
             />
 
             {discordNotifications && (
-              <div className="pl-11">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  className="hover-button bg-transparent">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Connect Discord
-                </Button>
+              <div className="pl-11 space-y-2">
+                {discordWebhookConfigured ? (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 text-green-500" />
+                      Connected
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="hover-button bg-transparent"
+                      onClick={openDiscordDialog}>
+                      Change
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={disconnectDiscord}
+                      disabled={discordWebhookMutation.isPending}>
+                      Disconnect
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    className="hover-button bg-transparent"
+                    onClick={openDiscordDialog}>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Connect Discord
+                  </Button>
+                )}
               </div>
             )}
+
+            <Dialog open={discordDialogOpen} onOpenChange={setDiscordDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Connect Discord</DialogTitle>
+                  <DialogDescription>
+                    Create a webhook in your Discord server to receive
+                    notifications. Go to Server Settings → Integrations →
+                    Webhooks, create one, and paste the URL below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="discord-webhook-url"
+                      className="text-sm font-medium">
+                      Webhook URL
+                    </label>
+                    <Input
+                      id="discord-webhook-url"
+                      type="url"
+                      placeholder="https://discord.com/api/webhooks/..."
+                      value={discordWebhookInput}
+                      onChange={(e) =>
+                        setDiscordWebhookInput(e.target.value)
+                      }
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <a
+                    href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ExternalLink className="h-4 w-4" />
+                    How to create a Discord webhook
+                  </a>
+                </div>
+                <DialogFooter>
+                  {discordWebhookConfigured && (
+                    <Button
+                      variant="ghost"
+                      onClick={disconnectDiscord}
+                      disabled={discordWebhookMutation.isPending}
+                      className="mr-auto text-muted-foreground hover:text-destructive">
+                      Disconnect
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => setDiscordDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveDiscordWebhook}
+                    disabled={
+                      discordWebhookMutation.isPending ||
+                      !discordWebhookInput.trim()
+                    }>
+                    {discordWebhookMutation.isPending ? 'Saving…' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             <div className="pt-2 flex justify-end">
               <Button type="submit" className="hover-button">

@@ -172,6 +172,7 @@ export type Database = {
           auto_sync: boolean;
           created_at: string | null;
           discord_notifications: boolean;
+          discord_webhook_url: string | null;
           email_notifications: boolean;
           id: string;
           slack_notifications: boolean;
@@ -182,6 +183,7 @@ export type Database = {
           auto_sync?: boolean;
           created_at?: string | null;
           discord_notifications?: boolean;
+          discord_webhook_url?: string | null;
           email_notifications?: boolean;
           id: string;
           slack_notifications?: boolean;
@@ -192,6 +194,7 @@ export type Database = {
           auto_sync?: boolean;
           created_at?: string | null;
           discord_notifications?: boolean;
+          discord_webhook_url?: string | null;
           email_notifications?: boolean;
           id?: string;
           slack_notifications?: boolean;
