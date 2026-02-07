@@ -7,13 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { 
   GitBranch, 
   Shield, 
-  Filter, 
   Users, 
   BarChart3, 
-  Bot,
+  Bell,
+  LayoutDashboard,
   ChevronRight,
-  Github,
-  ExternalLink
+  Github
 } from "lucide-react"
 
 const features = [
@@ -23,14 +22,14 @@ const features = [
     description: "See exactly who owns the most lines currently in production. Real metrics, not vanity stats."
   },
   {
-    icon: Bot,
-    title: "Exclude bots & generated code",
-    description: "Automatically filter out dependabot, renovate, and auto-generated files from your counts."
+    icon: Bell,
+    title: "Email & Discord notifications",
+    description: "Get notified when stats sync. Connect a Discord webhook or enable email alerts in settings."
   },
   {
-    icon: Filter,
-    title: "Path + filetype filters",
-    description: "Include or exclude specific paths and file types. Count only what matters to your team."
+    icon: LayoutDashboard,
+    title: "Multi-repo dashboard",
+    description: "Connect multiple repos and see an overview of production code ownership across your team."
   },
   {
     icon: Users,

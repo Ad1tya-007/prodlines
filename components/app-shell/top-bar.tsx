@@ -45,7 +45,8 @@ interface TopBarProps {
 }
 
 export function TopBar({ sidebarCollapsed }: TopBarProps) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
@@ -84,14 +85,14 @@ export function TopBar({ sidebarCollapsed }: TopBarProps) {
   };
 
   const getUserInitials = () => {
-    const name = profile?.full_name || user?.user_metadata?.full_name;
+    const name = user?.user_metadata?.full_name;
     if (name) {
       const names = name.split(' ');
       return names.length > 1
         ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
         : names[0].slice(0, 2).toUpperCase();
     }
-    const email = profile?.email || user?.email;
+    const email = user?.email;
     if (email) {
       return email.slice(0, 2).toUpperCase();
     }
@@ -99,11 +100,15 @@ export function TopBar({ sidebarCollapsed }: TopBarProps) {
   };
 
   const getUserName = () => {
-    return profile?.github_username || profile?.full_name || 'User';
+    return (
+      user?.user_metadata?.github_username ||
+      user?.user_metadata?.full_name ||
+      'User'
+    );
   };
 
   const getUserEmail = () => {
-    return profile?.email || user?.email || '';
+    return user?.email || '';
   };
 
   return (
@@ -185,8 +190,8 @@ export function TopBar({ sidebarCollapsed }: TopBarProps) {
                 className="hover-button p-0"
                 disabled={loggingOut}>
                 <Avatar className="h-8 w-8">
-                  {profile?.avatar_url && (
-                    <AvatarImage src={profile.avatar_url} />
+                  {user?.user_metadata?.avatar_url && (
+                    <AvatarImage src={user.user_metadata.avatar_url} />
                   )}
                   <AvatarFallback className="bg-secondary text-foreground text-sm">
                     {getUserInitials()}
