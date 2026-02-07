@@ -45,8 +45,6 @@ export function useUpdateRepositorySyncSettings() {
 
 export interface UpdateNotificationSettingsInput {
   emailNotifications: boolean;
-  weeklyDigest: boolean;
-  leaderboardChanges: boolean;
   slackNotifications: boolean;
   discordNotifications: boolean;
 }
@@ -58,8 +56,6 @@ export function useUpdateNotificationSettings() {
     mutationFn: async (input: UpdateNotificationSettingsInput) => {
       const updates: UserSettingsUpdate = {
         email_notifications: input.emailNotifications,
-        weekly_digest: input.weeklyDigest,
-        leaderboard_changes: input.leaderboardChanges,
         slack_notifications: input.slackNotifications,
         discord_notifications: input.discordNotifications,
       };

@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { AppShell } from '@/components/app-shell';
+import { AuthProvider } from '@/lib/providers/auth-provider';
 import { NotificationProvider } from '@/lib/providers/notification-provider';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,9 +11,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           Loading...
         </div>
       }>
-      <NotificationProvider>
-        <AppShell>{children}</AppShell>
-      </NotificationProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <AppShell>{children}</AppShell>
+        </NotificationProvider>
+      </AuthProvider>
     </Suspense>
   );
 }

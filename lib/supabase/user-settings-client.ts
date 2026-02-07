@@ -3,8 +3,6 @@ export type SyncFrequency = 'realtime' | 'hourly' | 'daily' | 'weekly';
 export interface UserSettings {
   id: string;
   email_notifications: boolean;
-  weekly_digest: boolean;
-  leaderboard_changes: boolean;
   slack_notifications: boolean;
   discord_notifications: boolean;
   auto_sync: boolean;
@@ -15,8 +13,6 @@ export interface UserSettings {
 
 export interface UserSettingsUpdate {
   email_notifications?: boolean;
-  weekly_digest?: boolean;
-  leaderboard_changes?: boolean;
   slack_notifications?: boolean;
   discord_notifications?: boolean;
   auto_sync?: boolean;

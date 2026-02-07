@@ -174,11 +174,9 @@ export type Database = {
           discord_notifications: boolean;
           email_notifications: boolean;
           id: string;
-          leaderboard_changes: boolean;
           slack_notifications: boolean;
           sync_frequency: string;
           updated_at: string | null;
-          weekly_digest: boolean;
         };
         Insert: {
           auto_sync?: boolean;
@@ -186,11 +184,9 @@ export type Database = {
           discord_notifications?: boolean;
           email_notifications?: boolean;
           id: string;
-          leaderboard_changes?: boolean;
           slack_notifications?: boolean;
           sync_frequency?: string;
           updated_at?: string | null;
-          weekly_digest?: boolean;
         };
         Update: {
           auto_sync?: boolean;
@@ -198,11 +194,9 @@ export type Database = {
           discord_notifications?: boolean;
           email_notifications?: boolean;
           id?: string;
-          leaderboard_changes?: boolean;
           slack_notifications?: boolean;
           sync_frequency?: string;
           updated_at?: string | null;
-          weekly_digest?: boolean;
         };
         Relationships: [];
       };

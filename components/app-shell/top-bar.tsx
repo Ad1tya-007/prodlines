@@ -35,19 +35,17 @@ import {
   setSelectedRepository,
   clearSelectedRepository,
 } from '@/lib/store/repositorySlice';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
-import type { Profile } from '@/lib/supabase/profiles-client';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/lib/providers/auth-provider';
 import { MobileNav } from './mobile-nav';
 import { NotificationsDropdown } from './notifications-dropdown';
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
-  user: SupabaseUser | null;
-  profile: Profile | null;
 }
 
-export function TopBar({ sidebarCollapsed, user, profile }: TopBarProps) {
+export function TopBar({ sidebarCollapsed }: TopBarProps) {
+  const { user, profile } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();

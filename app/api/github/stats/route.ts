@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { fetchGitHubStats } from '@/lib/github/stats'
+import { sendStatsSyncedEmail } from '@/lib/email'
 
 export async function GET(request: Request) {
   try {
@@ -80,6 +81,24 @@ export async function GET(request: Request) {
         metadata: { owner, repo, branch },
         seen: false,
       })
+
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('email_notifications')
+        .eq('id', user.id)
+        .single()
+
+      if (userSettings?.email_notifications) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', user.id)
+          .single()
+        const recipientEmail = user.email ?? profile?.email ?? null
+        if (recipientEmail) {
+          await sendStatsSyncedEmail(recipientEmail, fullName)
+        }
+      }
     }
 
     return NextResponse.json(stats)

@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -31,10 +30,7 @@ import {
 import { toast } from 'sonner';
 
 const notificationsSchema = z.object({
-  email: z.string().email().optional().or(z.literal('')),
   emailNotifications: z.boolean(),
-  weeklyDigest: z.boolean(),
-  leaderboardChanges: z.boolean(),
   slackNotifications: z.boolean(),
   discordNotifications: z.boolean(),
 });
@@ -47,10 +43,7 @@ export function NotificationsForm() {
   const form = useForm<NotificationsValues>({
     resolver: zodResolver(notificationsSchema),
     defaultValues: {
-      email: '',
       emailNotifications: false,
-      weeklyDigest: false,
-      leaderboardChanges: false,
       slackNotifications: false,
       discordNotifications: false,
     },
@@ -59,16 +52,12 @@ export function NotificationsForm() {
   useEffect(() => {
     if (!settings) return;
     form.reset({
-      email: '',
       emailNotifications: settings.email_notifications,
-      weeklyDigest: settings.weekly_digest,
-      leaderboardChanges: settings.leaderboard_changes,
       slackNotifications: settings.slack_notifications,
       discordNotifications: settings.discord_notifications,
     });
   }, [settings, form]);
 
-  const emailNotifications = form.watch('emailNotifications');
   const slackNotifications = form.watch('slackNotifications');
   const discordNotifications = form.watch('discordNotifications');
 
@@ -76,8 +65,6 @@ export function NotificationsForm() {
     try {
       await updateMutation.mutateAsync({
         emailNotifications: data.emailNotifications,
-        weeklyDigest: data.weeklyDigest,
-        leaderboardChanges: data.leaderboardChanges,
         slackNotifications: data.slackNotifications,
         discordNotifications: data.discordNotifications,
       });
@@ -173,84 +160,6 @@ export function NotificationsForm() {
                 </FormItem>
               )}
             />
-
-            {emailNotifications && (
-              <div className="pl-11 space-y-3">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <div className="flex flex-row items-center gap-2">
-                        <FormLabel htmlFor="email">Email address</FormLabel>
-                        <FormDescription>
-                          ( Used for notifications and account recovery )
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Input
-                          id="email"
-                          type="email"
-                          className="max-w-sm bg-secondary/50"
-                          placeholder="your@email.com"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="weeklyDigest"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <div>
-                        <FormLabel
-                          htmlFor="weekly-digest"
-                          className="text-sm font-normal">
-                          Weekly digest
-                        </FormLabel>
-                        <FormDescription className="mt-1">
-                          Summary of ownership changes every week
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          id="weekly-digest"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="leaderboardChanges"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <div>
-                        <FormLabel
-                          htmlFor="leaderboard-changes"
-                          className="text-sm font-normal">
-                          Leaderboard changes
-                        </FormLabel>
-                        <FormDescription className="mt-1">
-                          When your rank changes significantly
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          id="leaderboard-changes"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
 
             <Separator />
 
