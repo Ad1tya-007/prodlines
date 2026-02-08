@@ -49,6 +49,24 @@ export interface UpdateNotificationSettingsInput {
   discordNotifications: boolean;
 }
 
+export function useUpdateSlackWebhook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (webhookUrl: string | null) => {
+      const updates: UserSettingsUpdate = {
+        slack_webhook_url: webhookUrl,
+      };
+      const result = await updateCurrentUserSettings(updates);
+      if (!result) throw new Error('Failed to update Slack webhook');
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userSettingsQueryKey });
+    },
+  });
+}
+
 export function useUpdateDiscordWebhook() {
   const queryClient = useQueryClient();
 

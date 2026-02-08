@@ -12,15 +12,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -31,13 +22,15 @@ import {
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Check, ExternalLink, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Bell, Check, Mail, MessageSquare, Zap } from 'lucide-react';
 import {
   useUserSettings,
   useUpdateNotificationSettings,
+  useUpdateSlackWebhook,
   useUpdateDiscordWebhook,
 } from '@/lib/hooks/use-user-settings';
-import { isValidDiscordWebhookUrl } from '@/lib/discord';
+import { SlackWebhookDialog } from '@/components/pages/settings/slack-webhook-dialog';
+import { DiscordWebhookDialog } from '@/components/pages/settings/discord-webhook-dialog';
 import { toast } from 'sonner';
 
 const notificationsSchema = z.object({
@@ -51,9 +44,10 @@ type NotificationsValues = z.infer<typeof notificationsSchema>;
 export function NotificationsForm() {
   const { data: settings, isLoading, isError, error } = useUserSettings();
   const updateMutation = useUpdateNotificationSettings();
+  const slackWebhookMutation = useUpdateSlackWebhook();
   const discordWebhookMutation = useUpdateDiscordWebhook();
+  const [slackDialogOpen, setSlackDialogOpen] = useState(false);
   const [discordDialogOpen, setDiscordDialogOpen] = useState(false);
-  const [discordWebhookInput, setDiscordWebhookInput] = useState('');
   const form = useForm<NotificationsValues>({
     resolver: zodResolver(notificationsSchema),
     defaultValues: {
@@ -74,40 +68,21 @@ export function NotificationsForm() {
 
   const slackNotifications = form.watch('slackNotifications');
   const discordNotifications = form.watch('discordNotifications');
+  const slackWebhookConfigured = Boolean(settings?.slack_webhook_url);
   const discordWebhookConfigured = Boolean(settings?.discord_webhook_url);
 
-  function openDiscordDialog() {
-    setDiscordWebhookInput(settings?.discord_webhook_url ?? '');
-    setDiscordDialogOpen(true);
+  async function handleSlackWebhookSave(webhookUrl: string | null) {
+    await slackWebhookMutation.mutateAsync(webhookUrl);
+    toast.success(
+      webhookUrl ? 'Successfully added webhook' : 'Slack webhook disconnected',
+    );
   }
 
-  async function saveDiscordWebhook() {
-    const trimmed = discordWebhookInput.trim();
-    if (!trimmed) {
-      toast.error('Please enter a webhook URL');
-      return;
-    }
-    if (!isValidDiscordWebhookUrl(trimmed)) {
-      toast.error('Invalid webhook URL. It should look like https://discord.com/api/webhooks/...');
-      return;
-    }
-    try {
-      await discordWebhookMutation.mutateAsync(trimmed);
-      toast.success('Discord webhook connected');
-      setDiscordDialogOpen(false);
-    } catch {
-      toast.error('Failed to save webhook');
-    }
-  }
-
-  async function disconnectDiscord() {
-    try {
-      await discordWebhookMutation.mutateAsync(null);
-      toast.success('Discord webhook disconnected');
-      setDiscordDialogOpen(false);
-    } catch {
-      toast.error('Failed to disconnect');
-    }
+  async function handleDiscordWebhookSave(webhookUrl: string | null) {
+    await discordWebhookMutation.mutateAsync(webhookUrl);
+    toast.success(
+      webhookUrl ? 'Successfully added webhook' : 'Discord webhook disconnected',
+    );
   }
 
   async function onSubmit(data: NotificationsValues) {
@@ -166,231 +141,224 @@ export function NotificationsForm() {
   }
 
   return (
-    <Card className="hover-card bg-card/50 border-border/50">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-            <Bell className="h-5 w-5" />
+    <>
+      <Card className="hover-card bg-card/50 border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Choose how you want to be notified
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>
-              Choose how you want to be notified
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="emailNotifications"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <FormLabel htmlFor="email-notif">
-                        Email notifications
-                      </FormLabel>
-                      <FormDescription className="mt-1">
-                        Get updates about your repositories via email
-                      </FormDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="emailNotifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <FormLabel htmlFor="email-notif">
+                          Email notifications
+                        </FormLabel>
+                        <FormDescription className="mt-1">
+                          Get updates about your repositories via email
+                        </FormDescription>
+                      </div>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      id="email-notif"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    <FormControl>
+                      <Switch
+                        id="email-notif"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            <Separator />
+              <Separator />
 
-            <FormField
-              control={form.control}
-              name="slackNotifications"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <FormLabel htmlFor="slack-notif">
-                        Slack notifications
-                      </FormLabel>
-                      <FormDescription className="mt-1">
-                        Send updates to your Slack workspace
-                      </FormDescription>
+              <FormField
+                control={form.control}
+                name="slackNotifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <FormLabel htmlFor="slack-notif">
+                          Slack notifications
+                        </FormLabel>
+                        <FormDescription className="mt-1">
+                          Send updates to your Slack workspace
+                        </FormDescription>
+                      </div>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      id="slack-notif"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    <FormControl>
+                      <Switch
+                        id="slack-notif"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            {slackNotifications && (
-              <div className="pl-11">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  className="hover-button bg-transparent">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Connect Slack
-                </Button>
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="discordNotifications"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <FormLabel htmlFor="discord-notif">
-                        Discord notifications
-                      </FormLabel>
-                      <FormDescription className="mt-1">
-                        Send updates to your Discord server
-                      </FormDescription>
+              {slackNotifications && (
+                <div className="pl-11 space-y-2">
+                  {slackWebhookConfigured ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Connected
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        className="hover-button bg-transparent"
+                        onClick={() => setSlackDialogOpen(true)}>
+                        Change
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={async () => {
+                          try {
+                            await slackWebhookMutation.mutateAsync(null);
+                            toast.success('Slack webhook disconnected');
+                          } catch {
+                            toast.error('Failed to disconnect');
+                          }
+                        }}
+                        disabled={slackWebhookMutation.isPending}>
+                        Disconnect
+                      </Button>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      id="discord-notif"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {discordNotifications && (
-              <div className="pl-11 space-y-2">
-                {discordWebhookConfigured ? (
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Check className="h-4 w-4 text-green-500" />
-                      Connected
-                    </span>
+                  ) : (
                     <Button
                       variant="outline"
                       size="sm"
                       type="button"
                       className="hover-button bg-transparent"
-                      onClick={openDiscordDialog}>
-                      Change
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      type="button"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={disconnectDiscord}
-                      disabled={discordWebhookMutation.isPending}>
-                      Disconnect
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    className="hover-button bg-transparent"
-                    onClick={openDiscordDialog}>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Connect Discord
-                  </Button>
-                )}
-              </div>
-            )}
-
-            <Dialog open={discordDialogOpen} onOpenChange={setDiscordDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Connect Discord</DialogTitle>
-                  <DialogDescription>
-                    Create a webhook in your Discord server to receive
-                    notifications. Go to Server Settings → Integrations →
-                    Webhooks, create one, and paste the URL below.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-2">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="discord-webhook-url"
-                      className="text-sm font-medium">
-                      Webhook URL
-                    </label>
-                    <Input
-                      id="discord-webhook-url"
-                      type="url"
-                      placeholder="https://discord.com/api/webhooks/..."
-                      value={discordWebhookInput}
-                      onChange={(e) =>
-                        setDiscordWebhookInput(e.target.value)
-                      }
-                      className="font-mono text-sm"
-                    />
-                  </div>
-                  <a
-                    href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    <ExternalLink className="h-4 w-4" />
-                    How to create a Discord webhook
-                  </a>
-                </div>
-                <DialogFooter>
-                  {discordWebhookConfigured && (
-                    <Button
-                      variant="ghost"
-                      onClick={disconnectDiscord}
-                      disabled={discordWebhookMutation.isPending}
-                      className="mr-auto text-muted-foreground hover:text-destructive">
-                      Disconnect
+                      onClick={() => setSlackDialogOpen(true)}>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Connect Slack
                     </Button>
                   )}
-                  <Button
-                    variant="outline"
-                    onClick={() => setDiscordDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={saveDiscordWebhook}
-                    disabled={
-                      discordWebhookMutation.isPending ||
-                      !discordWebhookInput.trim()
-                    }>
-                    {discordWebhookMutation.isPending ? 'Saving…' : 'Save'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </div>
+              )}
 
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" className="hover-button">
-                Save preferences
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              <FormField
+                control={form.control}
+                name="discordNotifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <FormLabel htmlFor="discord-notif">
+                          Discord notifications
+                        </FormLabel>
+                        <FormDescription className="mt-1">
+                          Send updates to your Discord server
+                        </FormDescription>
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        id="discord-notif"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {discordNotifications && (
+                <div className="pl-11 space-y-2">
+                  {discordWebhookConfigured ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Connected
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        className="hover-button bg-transparent"
+                        onClick={() => setDiscordDialogOpen(true)}>
+                        Change
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={async () => {
+                          try {
+                            await discordWebhookMutation.mutateAsync(null);
+                            toast.success('Discord webhook disconnected');
+                          } catch {
+                            toast.error('Failed to disconnect');
+                          }
+                        }}
+                        disabled={discordWebhookMutation.isPending}>
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      className="hover-button bg-transparent"
+                      onClick={() => setDiscordDialogOpen(true)}>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Connect Discord
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-2 flex justify-end">
+                <Button type="submit" className="hover-button">
+                  Save preferences
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      <SlackWebhookDialog
+        open={slackDialogOpen}
+        onOpenChange={setSlackDialogOpen}
+        currentWebhookUrl={settings?.slack_webhook_url ?? null}
+        onSave={handleSlackWebhookSave}
+        isPending={slackWebhookMutation.isPending}
+      />
+      <DiscordWebhookDialog
+        open={discordDialogOpen}
+        onOpenChange={setDiscordDialogOpen}
+        currentWebhookUrl={settings?.discord_webhook_url ?? null}
+        onSave={handleDiscordWebhookSave}
+        isPending={discordWebhookMutation.isPending}
+      />
+    </>
   );
 }

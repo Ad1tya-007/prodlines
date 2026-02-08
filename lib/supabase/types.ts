@@ -176,6 +176,7 @@ export type Database = {
           email_notifications: boolean;
           id: string;
           slack_notifications: boolean;
+          slack_webhook_url: string | null;
           sync_frequency: string;
           updated_at: string | null;
         };
@@ -187,6 +188,7 @@ export type Database = {
           email_notifications?: boolean;
           id: string;
           slack_notifications?: boolean;
+          slack_webhook_url?: string | null;
           sync_frequency?: string;
           updated_at?: string | null;
         };
@@ -198,6 +200,7 @@ export type Database = {
           email_notifications?: boolean;
           id?: string;
           slack_notifications?: boolean;
+          slack_webhook_url?: string | null;
           sync_frequency?: string;
           updated_at?: string | null;
         };

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isValidDiscordWebhookUrl } from '@/lib/discord';
+import { isValidSlackWebhookUrl } from '@/lib/slack';
 
 // GET: Fetch current user's settings
 export async function GET() {
@@ -55,6 +56,7 @@ export async function PATCH(request: Request) {
     const ALLOWED_KEYS = [
       'email_notifications',
       'slack_notifications',
+      'slack_webhook_url',
       'discord_notifications',
       'discord_webhook_url',
       'auto_sync',
@@ -65,7 +67,18 @@ export async function PATCH(request: Request) {
     for (const key of ALLOWED_KEYS) {
       if (key in body) {
         const value = body[key];
-        if (key === 'discord_webhook_url') {
+        if (key === 'slack_webhook_url') {
+          if (value === null || value === '') {
+            updates[key] = null;
+          } else if (typeof value === 'string' && isValidSlackWebhookUrl(value)) {
+            updates[key] = value.trim();
+          } else {
+            return NextResponse.json(
+              { error: 'Invalid Slack webhook URL format' },
+              { status: 400 }
+            );
+          }
+        } else if (key === 'discord_webhook_url') {
           if (value === null || value === '') {
             updates[key] = null;
           } else if (typeof value === 'string' && isValidDiscordWebhookUrl(value)) {

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { fetchGitHubStats } from '@/lib/github/stats'
 import { sendStatsSyncedEmail } from '@/lib/email'
 import { sendDiscordWebhook } from '@/lib/discord'
+import { sendSlackWebhook } from '@/lib/slack'
 
 export async function GET(request: Request) {
   try {
@@ -85,9 +86,16 @@ export async function GET(request: Request) {
 
       const { data: userSettings } = await supabase
         .from('user_settings')
-        .select('email_notifications, discord_notifications, discord_webhook_url')
+        .select('email_notifications, slack_notifications, slack_webhook_url, discord_notifications, discord_webhook_url')
         .eq('id', user.id)
         .single()
+
+      if (userSettings?.slack_notifications && userSettings?.slack_webhook_url) {
+        await sendSlackWebhook(
+          userSettings.slack_webhook_url,
+          `📊 *Stats synced*\nYour GitHub stats have been synced for *${fullName}*.\nView your updated leaderboard in ProdLines.`
+        )
+      }
 
       if (userSettings?.email_notifications) {
         const { data: profile } = await supabase
