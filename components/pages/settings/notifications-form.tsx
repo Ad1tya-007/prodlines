@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -20,40 +20,61 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Check, Mail, MessageSquare, Zap } from 'lucide-react';
+import { Bell, Check, Mail, MessageSquare } from 'lucide-react';
 import {
   useUserSettings,
   useUpdateNotificationSettings,
-  useUpdateSlackWebhook,
-  useUpdateDiscordWebhook,
 } from '@/lib/hooks/use-user-settings';
-import { SlackWebhookDialog } from '@/components/pages/settings/slack-webhook-dialog';
-import { DiscordWebhookDialog } from '@/components/pages/settings/discord-webhook-dialog';
+import { isValidSlackWebhookUrl } from '@/lib/slack';
+import { isValidDiscordWebhookUrl } from '@/lib/discord';
 import { toast } from 'sonner';
 
-const notificationsSchema = z.object({
-  emailNotifications: z.boolean(),
-  slackNotifications: z.boolean(),
-  discordNotifications: z.boolean(),
-});
+const notificationsSchema = z
+  .object({
+    emailNotifications: z.boolean(),
+    slackNotifications: z.boolean(),
+    discordNotifications: z.boolean(),
+    slackWebhookUrl: z.string().default(''),
+    discordWebhookUrl: z.string().default(''),
+  })
+  .refine(
+    (data) =>
+      !data.slackNotifications ||
+      !data.slackWebhookUrl?.trim() ||
+      isValidSlackWebhookUrl(data.slackWebhookUrl.trim()),
+    {
+      message: 'Invalid Slack webhook URL (e.g. https://hooks.slack.com/services/...)',
+      path: ['slackWebhookUrl'],
+    },
+  )
+  .refine(
+    (data) =>
+      !data.discordNotifications ||
+      !data.discordWebhookUrl?.trim() ||
+      isValidDiscordWebhookUrl(data.discordWebhookUrl.trim()),
+    {
+      message:
+        'Invalid Discord webhook URL (e.g. https://discord.com/api/webhooks/...)',
+      path: ['discordWebhookUrl'],
+    },
+  );
 
 type NotificationsValues = z.infer<typeof notificationsSchema>;
 
 export function NotificationsForm() {
   const { data: settings, isLoading, isError, error } = useUserSettings();
   const updateMutation = useUpdateNotificationSettings();
-  const slackWebhookMutation = useUpdateSlackWebhook();
-  const discordWebhookMutation = useUpdateDiscordWebhook();
-  const [slackDialogOpen, setSlackDialogOpen] = useState(false);
-  const [discordDialogOpen, setDiscordDialogOpen] = useState(false);
   const form = useForm<NotificationsValues>({
     resolver: zodResolver(notificationsSchema),
     defaultValues: {
       emailNotifications: false,
       slackNotifications: false,
       discordNotifications: false,
+      slackWebhookUrl: '',
+      discordWebhookUrl: '',
     },
   });
 
@@ -63,27 +84,13 @@ export function NotificationsForm() {
       emailNotifications: settings.email_notifications,
       slackNotifications: settings.slack_notifications,
       discordNotifications: settings.discord_notifications,
+      slackWebhookUrl: settings.slack_webhook_url ?? '',
+      discordWebhookUrl: settings.discord_webhook_url ?? '',
     });
   }, [settings, form]);
 
   const slackNotifications = form.watch('slackNotifications');
   const discordNotifications = form.watch('discordNotifications');
-  const slackWebhookConfigured = Boolean(settings?.slack_webhook_url);
-  const discordWebhookConfigured = Boolean(settings?.discord_webhook_url);
-
-  async function handleSlackWebhookSave(webhookUrl: string | null) {
-    await slackWebhookMutation.mutateAsync(webhookUrl);
-    toast.success(
-      webhookUrl ? 'Successfully added webhook' : 'Slack webhook disconnected',
-    );
-  }
-
-  async function handleDiscordWebhookSave(webhookUrl: string | null) {
-    await discordWebhookMutation.mutateAsync(webhookUrl);
-    toast.success(
-      webhookUrl ? 'Successfully added webhook' : 'Discord webhook disconnected',
-    );
-  }
 
   async function onSubmit(data: NotificationsValues) {
     try {
@@ -91,10 +98,12 @@ export function NotificationsForm() {
         emailNotifications: data.emailNotifications,
         slackNotifications: data.slackNotifications,
         discordNotifications: data.discordNotifications,
+        slackWebhookUrl: data.slackWebhookUrl?.trim() || null,
+        discordWebhookUrl: data.discordWebhookUrl?.trim() || null,
       });
       toast.success('Notification preferences saved');
-    } catch (error) {
-      console.error('Error saving notification preferences:', error);
+    } catch (err) {
+      console.error('Error saving notification preferences:', err);
       toast.error('Failed to save preferences');
     }
   }
@@ -216,50 +225,34 @@ export function NotificationsForm() {
               />
 
               {slackNotifications && (
-                <div className="pl-11 space-y-2">
-                  {slackWebhookConfigured ? (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Connected
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        className="hover-button bg-transparent"
-                        onClick={() => setSlackDialogOpen(true)}>
-                        Change
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={async () => {
-                          try {
-                            await slackWebhookMutation.mutateAsync(null);
-                            toast.success('Slack webhook disconnected');
-                          } catch {
-                            toast.error('Failed to disconnect');
-                          }
-                        }}
-                        disabled={slackWebhookMutation.isPending}>
-                        Disconnect
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      className="hover-button bg-transparent"
-                      onClick={() => setSlackDialogOpen(true)}>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Connect Slack
-                    </Button>
+                <FormField
+                  control={form.control}
+                  name="slackWebhookUrl"
+                  render={({ field }) => (
+                    <FormItem className="pl-11">
+                      <FormLabel htmlFor="slack-webhook">Webhook URL</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input
+                            id="slack-webhook"
+                            type="url"
+                            placeholder="https://hooks.slack.com/services/..."
+                            className="font-mono text-sm"
+                            {...field}
+                          />
+                        </FormControl>
+                        {field.value?.trim() &&
+                          isValidSlackWebhookUrl(field.value.trim()) && (
+                            <Check className="h-4 w-4 shrink-0 text-green-500" />
+                          )}
+                      </div>
+                      <FormDescription>
+                        Leave empty to clear. Notifications only send when URL
+                        is set.
+                      </FormDescription>
+                    </FormItem>
                   )}
-                </div>
+                />
               )}
 
               <FormField
@@ -290,75 +283,50 @@ export function NotificationsForm() {
               />
 
               {discordNotifications && (
-                <div className="pl-11 space-y-2">
-                  {discordWebhookConfigured ? (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Connected
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        type="button"
-                        className="hover-button bg-transparent"
-                        onClick={() => setDiscordDialogOpen(true)}>
-                        Change
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        type="button"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={async () => {
-                          try {
-                            await discordWebhookMutation.mutateAsync(null);
-                            toast.success('Discord webhook disconnected');
-                          } catch {
-                            toast.error('Failed to disconnect');
-                          }
-                        }}
-                        disabled={discordWebhookMutation.isPending}>
-                        Disconnect
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      className="hover-button bg-transparent"
-                      onClick={() => setDiscordDialogOpen(true)}>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Connect Discord
-                    </Button>
+                <FormField
+                  control={form.control}
+                  name="discordWebhookUrl"
+                  render={({ field }) => (
+                    <FormItem className="pl-11">
+                      <FormLabel htmlFor="discord-webhook">
+                        Webhook URL
+                      </FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input
+                            id="discord-webhook"
+                            type="url"
+                            placeholder="https://discord.com/api/webhooks/..."
+                            className="font-mono text-sm"
+                            {...field}
+                          />
+                        </FormControl>
+                        {field.value?.trim() &&
+                          isValidDiscordWebhookUrl(field.value.trim()) && (
+                            <Check className="h-4 w-4 shrink-0 text-green-500" />
+                          )}
+                      </div>
+                      <FormDescription>
+                        Leave empty to clear. Notifications only send when URL
+                        is set.
+                      </FormDescription>
+                    </FormItem>
                   )}
-                </div>
+                />
               )}
 
               <div className="pt-2 flex justify-end">
-                <Button type="submit" className="hover-button">
-                  Save preferences
+                <Button
+                  type="submit"
+                  className="hover-button"
+                  disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? 'Saving…' : 'Save preferences'}
                 </Button>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
-      <SlackWebhookDialog
-        open={slackDialogOpen}
-        onOpenChange={setSlackDialogOpen}
-        currentWebhookUrl={settings?.slack_webhook_url ?? null}
-        onSave={handleSlackWebhookSave}
-        isPending={slackWebhookMutation.isPending}
-      />
-      <DiscordWebhookDialog
-        open={discordDialogOpen}
-        onOpenChange={setDiscordDialogOpen}
-        currentWebhookUrl={settings?.discord_webhook_url ?? null}
-        onSave={handleDiscordWebhookSave}
-        isPending={discordWebhookMutation.isPending}
-      />
     </>
   );
 }

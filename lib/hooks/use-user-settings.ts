@@ -48,42 +48,8 @@ export interface UpdateNotificationSettingsInput {
   emailNotifications: boolean;
   slackNotifications: boolean;
   discordNotifications: boolean;
-}
-
-export function useUpdateSlackWebhook() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (webhookUrl: string | null) => {
-      const updates: UserSettingsUpdate = {
-        slack_webhook_url: webhookUrl,
-      };
-      const result = await updateCurrentUserSettings(updates);
-      if (!result) throw new Error('Failed to update Slack webhook');
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userSettingsQueryKey });
-    },
-  });
-}
-
-export function useUpdateDiscordWebhook() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (webhookUrl: string | null) => {
-      const updates: UserSettingsUpdate = {
-        discord_webhook_url: webhookUrl,
-      };
-      const result = await updateCurrentUserSettings(updates);
-      if (!result) throw new Error('Failed to update Discord webhook');
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userSettingsQueryKey });
-    },
-  });
+  slackWebhookUrl?: string | null;
+  discordWebhookUrl?: string | null;
 }
 
 export function useUpdateNotificationSettings() {
@@ -95,6 +61,10 @@ export function useUpdateNotificationSettings() {
         email_notifications: input.emailNotifications,
         slack_notifications: input.slackNotifications,
         discord_notifications: input.discordNotifications,
+        slack_webhook_url:
+          input.slackWebhookUrl?.trim() || null,
+        discord_webhook_url:
+          input.discordWebhookUrl?.trim() || null,
       };
       const result = await updateCurrentUserSettings(updates);
       if (!result) throw new Error('Failed to save notification preferences');
