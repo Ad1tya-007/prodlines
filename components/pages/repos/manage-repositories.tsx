@@ -21,6 +21,8 @@ import {
   useSavedRepositories,
   useDeleteRepository,
 } from '@/lib/hooks/use-repositories';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { clearSelectedRepository } from '@/lib/store/repositorySlice';
 
 export function ManageRepositories() {
   const [search, setSearch] = useState('');
@@ -29,6 +31,11 @@ export function ManageRepositories() {
     id: string;
     full_name: string;
   } | null>(null);
+
+  const dispatch = useAppDispatch();
+  const selectedRepository = useAppSelector(
+    (state) => state.repository.selectedRepository,
+  );
 
   const {
     data: savedRepositories = [],
@@ -43,7 +50,7 @@ export function ManageRepositories() {
     (repo) =>
       repo.name.toLowerCase().includes(search.toLowerCase()) ||
       repo.owner.toLowerCase().includes(search.toLowerCase()) ||
-      repo.full_name.toLowerCase().includes(search.toLowerCase())
+      repo.full_name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleDeleteClick = (repo: { id: string; full_name: string }) => {
@@ -56,6 +63,9 @@ export function ManageRepositories() {
     setDeletingRepoId(repoToDelete.id);
     try {
       await deleteRepoMutation.mutateAsync(repoToDelete.id);
+      if (selectedRepository?.id === repoToDelete.id) {
+        dispatch(clearSelectedRepository());
+      }
       setRepoToDelete(null);
     } catch (err) {
       console.error('Error deleting repository:', err);
@@ -222,18 +232,18 @@ export function ManageRepositories() {
             <AlertDialogDescription>
               Are you sure you want to delete{' '}
               <span className="font-semibold text-foreground">
-                {repoToDelete?.full_name}
+                {repoToDelete?.full_name}{' '}
               </span>
               ? This will:
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Stop tracking this repository</li>
-                <li>Remove all synced data and statistics</li>
-                <li>Clear it from your leaderboards</li>
-              </ul>
-              <p className="mt-3 text-destructive font-medium">
-                This action cannot be undone.
-              </p>
             </AlertDialogDescription>
+            <ul className="mt-2 space-y-1 list-disc list-inside text-sm text-muted-foreground">
+              <li>Stop tracking this repository</li>
+              <li>Remove all synced data and statistics</li>
+              <li>Clear it from your leaderboards</li>
+            </ul>
+            <p className="mt-3 text-destructive font-medium">
+              This action cannot be undone.
+            </p>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleDeleteCancel}>

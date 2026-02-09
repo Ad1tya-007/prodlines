@@ -5,6 +5,7 @@ import {
   type UserSettingsUpdate,
   type SyncFrequency,
 } from '@/lib/supabase/user-settings-client';
+import { toast } from 'sonner';
 
 export const userSettingsQueryKey = ['user-settings'] as const;
 
@@ -121,6 +122,10 @@ export function useDeleteAccount() {
     onSuccess: () => {
       queryClient.clear();
       window.location.href = '/';
+      toast.success('Account deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete account');
     },
   });
 }

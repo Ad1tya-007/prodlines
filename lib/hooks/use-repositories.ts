@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { GitHubRepository } from '@/lib/types/github';
+import { toast } from 'sonner';
 
 // Types for saved repositories
 interface SavedRepository {
@@ -108,6 +109,10 @@ export function useSaveRepositories() {
     onSuccess: () => {
       // Invalidate and refetch saved repositories
       queryClient.invalidateQueries({ queryKey: ['saved-repositories'] });
+      toast.success('Repositories saved successfully');
+    },
+    onError: () => {
+      toast.error('Failed to save repositories');
     },
   });
 }
@@ -121,6 +126,10 @@ export function useDeleteRepository() {
     onSuccess: () => {
       // Invalidate and refetch saved repositories
       queryClient.invalidateQueries({ queryKey: ['saved-repositories'] });
+      toast.success('Repository deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete repository');
     },
   });
 }

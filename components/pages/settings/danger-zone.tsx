@@ -77,13 +77,13 @@ export function DangerZone() {
                   This action cannot be undone. This will permanently delete
                   your account and remove all your data from our servers,
                   including:
-                  <p className="mt-2 space-y-1 list-disc list-inside">
-                    <p> - All connected repositories</p>
-                    <p> - Leaderboard statistics and history</p>
-                    <p> - Profile information</p>
-                    <p> - Notification preferences</p>
-                  </p>
                 </AlertDialogDescription>
+                <ul className="mt-2 space-y-1 list-disc list-inside text-sm text-muted-foreground">
+                  <li> All connected repositories</li>
+                  <li> Leaderboard statistics and history</li>
+                  <li> Profile information</li>
+                  <li> Notification preferences</li>
+                </ul>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel
