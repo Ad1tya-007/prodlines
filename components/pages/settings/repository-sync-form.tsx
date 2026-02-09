@@ -20,6 +20,7 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -38,6 +39,7 @@ import { toast } from 'sonner';
 const repositorySyncSchema = z.object({
   autoSync: z.boolean(),
   syncFrequency: z.enum(['realtime', 'hourly', 'daily', 'weekly']),
+  githubWebhookSecret: z.string().default(''),
 });
 
 type RepositorySyncValues = z.infer<typeof repositorySyncSchema>;
@@ -50,6 +52,7 @@ export function RepositorySyncForm() {
     defaultValues: {
       autoSync: false,
       syncFrequency: 'hourly',
+      githubWebhookSecret: '',
     },
   });
 
@@ -59,6 +62,7 @@ export function RepositorySyncForm() {
       autoSync: settings.auto_sync,
       syncFrequency:
         settings.sync_frequency as RepositorySyncValues['syncFrequency'],
+      githubWebhookSecret: settings.github_webhook_secret ?? '',
     });
   }, [settings, form]);
 
@@ -69,6 +73,10 @@ export function RepositorySyncForm() {
       await updateMutation.mutateAsync({
         autoSync: data.autoSync,
         syncFrequency: data.syncFrequency,
+        githubWebhookSecret:
+          data.syncFrequency === 'realtime'
+            ? data.githubWebhookSecret?.trim() || null
+            : null,
       });
       toast.success('Repository sync preferences saved');
     } catch {
@@ -187,9 +195,63 @@ export function RepositorySyncForm() {
                         <SelectItem value="weekly">Weekly</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      {field.value === 'realtime'
+                        ? 'Add a webhook in your repo (Settings → Webhooks). Use the URL below and paste the same secret here.'
+                        : `A scheduled job should call /api/cron/sync?frequency=${field.value} with your CRON_SECRET.`}
+                    </FormDescription>
                   </FormItem>
                 )}
               />
+            )}
+
+            {autoSync && form.watch('syncFrequency') === 'realtime' && (
+              <>
+                <div className="space-y-2 pl-4 border-l-2 border-border/50">
+                  <FormLabel htmlFor="webhook-url">
+                    Webhook URL (add this in GitHub)
+                  </FormLabel>
+                  <Input
+                    id="webhook-url"
+                    readOnly
+                    className="font-mono text-sm bg-muted/50"
+                    value={
+                      typeof window !== 'undefined'
+                        ? `${window.location.origin}/api/webhooks/github`
+                        : '/api/webhooks/github'
+                    }
+                  />
+                  <FormDescription>
+                    In your repo: Settings → Webhooks → Add webhook. Paste the
+                    URL above. Content type: application/json.
+                  </FormDescription>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="githubWebhookSecret"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 pl-4 border-l-2 border-border/50">
+                      <FormLabel htmlFor="github-webhook-secret">
+                        Webhook secret
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          id="github-webhook-secret"
+                          type="password"
+                          autoComplete="off"
+                          placeholder="Same secret you set in GitHub"
+                          className="font-mono bg-secondary/50"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Create a secret when adding the webhook in GitHub, then
+                        paste the same value here so we can verify deliveries.
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
 
             <div className="pt-2 flex justify-end">

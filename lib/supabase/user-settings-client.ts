@@ -9,6 +9,7 @@ export interface UserSettings {
   discord_webhook_url: string | null;
   auto_sync: boolean;
   sync_frequency: SyncFrequency;
+  github_webhook_secret: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +22,7 @@ export interface UserSettingsUpdate {
   discord_webhook_url?: string | null;
   auto_sync?: boolean;
   sync_frequency?: SyncFrequency;
+  github_webhook_secret?: string | null;
 }
 
 const FETCH_TIMEOUT_MS = 10_000;

@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { fetchGitHubStats } from '@/lib/github/stats'
-import { sendStatsSyncedEmail } from '@/lib/email'
-import { sendDiscordWebhook } from '@/lib/discord'
-import { sendSlackWebhook } from '@/lib/slack'
+import { syncRepoForUser } from '@/lib/sync/sync-repo-for-user'
 
 export async function GET(request: Request) {
   try {
@@ -51,75 +49,32 @@ export async function GET(request: Request) {
       )
     }
 
-    const stats = await fetchGitHubStats(owner, repo, branch, githubToken)
-
-    const { error: upsertError } = await supabase
-      .from('github_stats')
-      .upsert(
-        {
-          user_id: user.id,
-          owner,
-          repo,
-          branch,
-          stats,
-          last_synced_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id,owner,repo,branch',
-          ignoreDuplicates: false,
-        }
-      )
-
-    if (upsertError) {
-      console.error('Error saving github_stats:', upsertError)
-    } else {
-      const fullName = `${owner}/${repo}`
-      const message = `Stats synced for ${fullName}`
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        type: 'github_stats_synced',
-        message,
-        metadata: { owner, repo, branch },
-        seen: false,
-      })
-
-      const { data: userSettings } = await supabase
-        .from('user_settings')
-        .select('email_notifications, slack_notifications, slack_webhook_url, discord_notifications, discord_webhook_url')
+    if (sync) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
         .eq('id', user.id)
         .single()
-
-      if (userSettings?.slack_notifications && userSettings?.slack_webhook_url) {
-        await sendSlackWebhook(
-          userSettings.slack_webhook_url,
-          `📊 *Stats synced*\nYour GitHub stats have been synced for *${fullName}*.\nView your updated leaderboard in ProdLines.`
+      const recipientEmail = user.email ?? profile?.email ?? null
+      const result = await syncRepoForUser(
+        supabase,
+        user.id,
+        owner,
+        repo,
+        branch,
+        githubToken,
+        recipientEmail
+      )
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.error ?? 'Sync failed' },
+          { status: 500 }
         )
       }
-
-      if (userSettings?.email_notifications) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', user.id)
-          .single()
-        const recipientEmail = user.email ?? profile?.email ?? null
-        if (recipientEmail) {
-          await sendStatsSyncedEmail(recipientEmail, fullName)
-        }
-      }
-
-      if (
-        userSettings?.discord_notifications &&
-        userSettings?.discord_webhook_url
-      ) {
-        await sendDiscordWebhook(
-          userSettings.discord_webhook_url,
-          `📊 **Stats synced**\nYour GitHub stats have been synced for **${fullName}**.\nView your updated leaderboard in ProdLines.`
-        )
-      }
+      return NextResponse.json(result.stats!)
     }
 
+    const stats = await fetchGitHubStats(owner, repo, branch, githubToken)
     return NextResponse.json(stats)
   } catch (error) {
     console.error('Error fetching GitHub stats:', error)
