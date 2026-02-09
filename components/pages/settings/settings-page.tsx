@@ -1,6 +1,6 @@
 'use client';
 
-import { RepositorySyncForm } from './repository-sync-form';
+// import { RepositorySyncForm } from './repository-sync-form';
 import { NotificationsForm } from './notifications-form';
 import { DangerZone } from './danger-zone';
 
@@ -15,7 +15,7 @@ export function SettingsPage() {
         </p>
       </div>
       <div className="space-y-2">
-        <RepositorySyncForm />
+        {/* <RepositorySyncForm /> */}
         <NotificationsForm />
         <DangerZone />
       </div>

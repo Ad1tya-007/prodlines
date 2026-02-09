@@ -174,7 +174,6 @@ export type Database = {
           discord_notifications: boolean;
           discord_webhook_url: string | null;
           email_notifications: boolean;
-          github_webhook_secret: string | null;
           id: string;
           slack_notifications: boolean;
           slack_webhook_url: string | null;
@@ -187,7 +186,6 @@ export type Database = {
           discord_notifications?: boolean;
           discord_webhook_url?: string | null;
           email_notifications?: boolean;
-          github_webhook_secret?: string | null;
           id: string;
           slack_notifications?: boolean;
           slack_webhook_url?: string | null;
@@ -200,7 +198,6 @@ export type Database = {
           discord_notifications?: boolean;
           discord_webhook_url?: string | null;
           email_notifications?: boolean;
-          github_webhook_secret?: string | null;
           id?: string;
           slack_notifications?: boolean;
           slack_webhook_url?: string | null;

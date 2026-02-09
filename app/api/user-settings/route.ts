@@ -61,7 +61,6 @@ export async function PATCH(request: Request) {
       'discord_webhook_url',
       'auto_sync',
       'sync_frequency',
-      'github_webhook_secret',
     ] as const;
 
     const updates: Record<string, unknown> = {};
@@ -90,8 +89,6 @@ export async function PATCH(request: Request) {
               { status: 400 }
             );
           }
-        } else if (key === 'github_webhook_secret') {
-          updates[key] = value === null || value === '' ? null : (typeof value === 'string' ? value.trim() : value);
         } else {
           updates[key] = value;
         }

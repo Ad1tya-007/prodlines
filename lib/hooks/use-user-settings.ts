@@ -22,7 +22,6 @@ export function useUserSettings() {
 export interface UpdateRepositorySyncInput {
   autoSync: boolean;
   syncFrequency: SyncFrequency;
-  githubWebhookSecret?: string | null;
 }
 
 export function useUpdateRepositorySyncSettings() {
@@ -33,7 +32,6 @@ export function useUpdateRepositorySyncSettings() {
       const updates: UserSettingsUpdate = {
         auto_sync: input.autoSync,
         sync_frequency: input.syncFrequency,
-        github_webhook_secret: input.githubWebhookSecret?.trim() || null,
       };
       const result = await updateCurrentUserSettings(updates);
       if (!result)
