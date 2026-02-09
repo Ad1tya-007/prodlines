@@ -10,12 +10,36 @@ export interface Notification {
   created_at: string;
 }
 
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+}
+
 export const notificationsQueryKey = ['notifications'] as const;
 
-async function fetchNotifications(): Promise<Notification[]> {
-  const response = await fetch('/api/notifications');
+export function notificationsQueryKeyWithParams(
+  page: number,
+  rows: number,
+  search: string,
+) {
+  return [...notificationsQueryKey, page, rows, search] as const;
+}
+
+async function fetchNotifications(
+  page: number,
+  rows: number,
+  search: string,
+): Promise<NotificationsResponse> {
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('rows', String(rows));
+  if (search) params.set('search', search);
+
+  const response = await fetch(`/api/notifications?${params.toString()}`);
   if (!response.ok) {
-    if (response.status === 401) return [];
+    if (response.status === 401) {
+      return { notifications: [], total: 0 };
+    }
     const data = await response.json().catch(() => ({}));
     throw new Error(data.error ?? 'Failed to fetch notifications');
   }
@@ -30,10 +54,20 @@ async function markAllNotificationsSeen(): Promise<void> {
   }
 }
 
-export function useNotificationsQuery() {
+export interface UseNotificationsQueryOptions {
+  page: number;
+  rows: number;
+  search?: string;
+}
+
+export function useNotificationsQuery({
+  page,
+  rows,
+  search = '',
+}: UseNotificationsQueryOptions) {
   return useQuery({
-    queryKey: notificationsQueryKey,
-    queryFn: fetchNotifications,
+    queryKey: notificationsQueryKeyWithParams(page, rows, search),
+    queryFn: () => fetchNotifications(page, rows, search),
     staleTime: 60 * 1000,
     retry: false,
   });
@@ -45,9 +79,7 @@ export function useMarkAllNotificationsSeen() {
   return useMutation({
     mutationFn: markAllNotificationsSeen,
     onSuccess: () => {
-      queryClient.setQueryData<Notification[]>(notificationsQueryKey, (old) =>
-        old ? old.map((n) => ({ ...n, seen: true })) : []
-      );
+      queryClient.invalidateQueries({ queryKey: notificationsQueryKey });
     },
   });
 }

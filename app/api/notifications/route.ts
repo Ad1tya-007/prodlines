@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-// GET: Fetch all notifications for current user
-export async function GET() {
+// GET: Fetch notifications for current user with pagination
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -13,11 +13,28 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+    const rows = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get('rows') ?? '10', 10))
+    );
+    const search = searchParams.get('search')?.trim() ?? '';
+
+    const from = (page - 1) * rows;
+    const to = from + rows - 1;
+
+    let query = supabase
       .from('notifications')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
+
+    if (search) {
+      query = query.ilike('message', `%${search}%`);
+    }
+
+    const { data, error, count } = await query.range(from, to);
 
     if (error) {
       console.error('Error fetching notifications:', error);
@@ -27,7 +44,10 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(data ?? []);
+    return NextResponse.json({
+      notifications: data ?? [],
+      total: count ?? 0,
+    });
   } catch (error) {
     console.error('Error in GET /api/notifications:', error);
     return NextResponse.json(

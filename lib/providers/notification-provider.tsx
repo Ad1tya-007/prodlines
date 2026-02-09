@@ -39,7 +39,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [userId, setUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: notifications = [], refetch, isLoading } = useNotificationsQuery();
+  const { data, refetch, isLoading } = useNotificationsQuery({
+    page: 1,
+    rows: 50,
+  });
+  const notifications = data?.notifications ?? [];
   const markAllMutation = useMarkAllNotificationsSeen();
 
   const unreadCount = notifications.filter((n) => !n.seen).length;
