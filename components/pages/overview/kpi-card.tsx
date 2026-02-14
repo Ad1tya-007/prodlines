@@ -31,7 +31,9 @@ export function KPICard({ card, index }: KPICardProps) {
       <CardContent>
         <div className="text-2xl font-bold">{card.value}</div>
         <div className="flex items-center justify-between mt-1">
-          <p className="text-xs text-muted-foreground">{card.description}</p>
+          {card.description && (
+            <p className="text-xs text-muted-foreground">{card.description}</p>
+          )}
           {card.trend && (
             <Badge
               variant="outline"
@@ -39,7 +41,7 @@ export function KPICard({ card, index }: KPICardProps) {
                 'text-xs',
                 card.trendUp
                   ? 'text-green-500 border-green-500/30'
-                  : 'text-red-500 border-red-500/30'
+                  : 'text-red-500 border-red-500/30',
               )}>
               {card.trendUp ? (
                 <TrendingUp className="h-3 w-3 mr-1" />

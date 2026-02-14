@@ -99,7 +99,7 @@ export function OverviewPage({
         {
           title: 'Last Sync',
           value: lastSyncFormatted,
-          description: 'Auto-sync enabled',
+          description: '',
           icon: Clock,
           trend: null,
           trendUp: null,
