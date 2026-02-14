@@ -4,6 +4,75 @@ import { fetchGitHubStats } from '@/lib/github/stats'
 import { sendStatsSyncedEmail } from '@/lib/email'
 import { sendDiscordWebhook } from '@/lib/discord'
 import { sendSlackWebhook } from '@/lib/slack'
+import type { GitHubStats, GitHubStatsTrend } from '@/lib/types/github'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+async function getStatsWithTrends(
+  supabase: SupabaseClient,
+  userId: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  stats: GitHubStats
+): Promise<GitHubStats> {
+  const { data: snapshots } = await supabase
+    .from('github_stats_snapshots')
+    .select('production_loc, active_contributors')
+    .eq('user_id', userId)
+    .eq('owner', owner)
+    .eq('repo', repo)
+    .eq('branch', branch)
+    .order('created_at', { ascending: false })
+    .limit(2)
+
+  if (!snapshots || snapshots.length < 2) {
+    return stats
+  }
+
+  const [curr, prev] = snapshots
+  const productionLOCTrend = formatProductionLOCTrend(
+    curr.production_loc,
+    prev.production_loc
+  )
+  const activeContributorsTrend = formatActiveContributorsTrend(
+    curr.active_contributors,
+    prev.active_contributors
+  )
+
+  return {
+    ...stats,
+    productionLOCTrend: productionLOCTrend ?? undefined,
+    activeContributorsTrend: activeContributorsTrend ?? undefined,
+  }
+}
+
+function formatProductionLOCTrend(
+  current: number,
+  previous: number
+): GitHubStatsTrend | null {
+  if (previous === 0) return null
+  const changePercent = ((current - previous) / previous) * 100
+  const up = changePercent >= 0
+  const sign = changePercent >= 0 ? '+' : ''
+  return {
+    value: `${sign}${changePercent.toFixed(1)}%`,
+    up,
+  }
+}
+
+function formatActiveContributorsTrend(
+  current: number,
+  previous: number
+): GitHubStatsTrend | null {
+  const delta = current - previous
+  if (delta === 0) return null
+  const up = delta > 0
+  const sign = delta > 0 ? '+' : ''
+  return {
+    value: `${sign}${delta}`,
+    up,
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -37,7 +106,15 @@ export async function GET(request: Request) {
       .single()
 
     if (!sync && !error && cached?.stats) {
-      return NextResponse.json(cached.stats)
+      const statsWithTrends = await getStatsWithTrends(
+        supabase,
+        user.id,
+        owner,
+        repo,
+        branch,
+        cached.stats as GitHubStats
+      )
+      return NextResponse.json(statsWithTrends)
     }
 
     const { data: { session } } = await supabase.auth.getSession()
@@ -52,6 +129,21 @@ export async function GET(request: Request) {
     }
 
     const stats = await fetchGitHubStats(owner, repo, branch, githubToken)
+
+    const mergedPrsCount = stats.contributors.reduce(
+      (sum, c) => sum + c.recentMergedPrs,
+      0
+    )
+
+    await supabase.from('github_stats_snapshots').insert({
+      user_id: user.id,
+      owner,
+      repo,
+      branch,
+      production_loc: stats.productionLOC,
+      active_contributors: stats.activeContributors,
+      merged_prs_count: mergedPrsCount,
+    })
 
     const { error: upsertError } = await supabase
       .from('github_stats')
@@ -120,7 +212,15 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json(stats)
+    const statsWithTrends = await getStatsWithTrends(
+      supabase,
+      user.id,
+      owner,
+      repo,
+      branch,
+      stats
+    )
+    return NextResponse.json(statsWithTrends)
   } catch (error) {
     console.error('Error fetching GitHub stats:', error)
     return NextResponse.json(

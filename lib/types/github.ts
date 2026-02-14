@@ -31,11 +31,20 @@ export interface GitHubContributor {
   recentPRs: PullRequest[];
 }
 
+export interface GitHubStatsTrend {
+  value: string;
+  up: boolean;
+}
+
 export interface GitHubStats {
   productionLOC: number;
   activeContributors: number;
   lastSync: string;
   contributors: GitHubContributor[];
+  /** Trend vs previous sync (null when no previous snapshot) */
+  productionLOCTrend?: GitHubStatsTrend | null;
+  /** Trend vs previous sync (null when no previous snapshot) */
+  activeContributorsTrend?: GitHubStatsTrend | null;
 }
 
 import type { LucideIcon } from 'lucide-react';
