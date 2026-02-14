@@ -87,7 +87,7 @@ export default function LandingPage() {
                 <Link
                   href="#features"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Product
+                  Features
                 </Link>
 
                 <Link
@@ -263,7 +263,9 @@ export default function LandingPage() {
       </section>
 
       {/* Docs */}
-      <section id="docs" className="py-24 border-t border-border/50 scroll-mt-24">
+      <section
+        id="docs"
+        className="py-24 border-t border-border/50 scroll-mt-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-3xl font-bold">Documentation</h2>
@@ -273,7 +275,9 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50" style={{ animationFillMode: 'forwards' }}>
+            <Card
+              className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50"
+              style={{ animationFillMode: 'forwards' }}>
               <CardHeader>
                 <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center mb-3 group-hover:rounded-none transition-all duration-200">
                   <Zap className="w-5 h-5 text-foreground icon-hover" />
@@ -282,11 +286,17 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-muted-foreground">
-                  Connect your repo in under a minute. OAuth with GitHub, pick a branch, and view your leaderboard.
+                  Connect your repo in under a minute. OAuth with GitHub, pick a
+                  branch, and view your leaderboard.
                 </CardDescription>
               </CardContent>
             </Card>
-            <Card className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
+            <Card
+              className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50"
+              style={{
+                animationDelay: '100ms',
+                animationFillMode: 'forwards',
+              }}>
               <CardHeader>
                 <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center mb-3 group-hover:rounded-none transition-all duration-200">
                   <BookOpen className="w-5 h-5 text-foreground icon-hover" />
@@ -295,11 +305,17 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-muted-foreground">
-                  Programmatic access to ownership data. REST endpoints for stats, sync status, and webhook configuration.
+                  Programmatic access to ownership data. REST endpoints for
+                  stats, sync status, and webhook configuration.
                 </CardDescription>
               </CardContent>
             </Card>
-            <Card className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50 sm:col-span-2 lg:col-span-1" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
+            <Card
+              className="hover-card group opacity-0 animate-fade-in bg-card/50 border-border/50 sm:col-span-2 lg:col-span-1"
+              style={{
+                animationDelay: '200ms',
+                animationFillMode: 'forwards',
+              }}>
               <CardHeader>
                 <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center mb-3 group-hover:rounded-none transition-all duration-200">
                   <Code className="w-5 h-5 text-foreground icon-hover" />
@@ -308,7 +324,8 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-muted-foreground">
-                  Discord webhooks, email alerts, CI checks. Learn how to embed ProdLines into your workflow.
+                  Discord webhooks, email alerts, CI checks. Learn how to embed
+                  ProdLines into your workflow.
                 </CardDescription>
               </CardContent>
             </Card>
