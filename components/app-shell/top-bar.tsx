@@ -211,12 +211,6 @@ export function TopBar({ sidebarCollapsed }: TopBarProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/app/settings">
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/app/settings">
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Link>
