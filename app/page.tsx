@@ -360,40 +360,14 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border/50 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-foreground rounded flex items-center justify-center">
                 <BarChart3 className="w-4 h-4 text-background" />
               </div>
               <span className="font-medium">ProdLines</span>
             </div>
-            <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-              <Link
-                href="#"
-                className="hover:text-foreground transition-colors">
-                About
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-foreground transition-colors">
-                Blog
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-foreground transition-colors">
-                Careers
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-foreground transition-colors">
-                Privacy
-              </Link>
-              <Link
-                href="#"
-                className="hover:text-foreground transition-colors">
-                Terms
-              </Link>
-            </nav>
+
             <p className="text-sm text-muted-foreground">
               © 2026 ProdLines. All rights reserved.
             </p>
