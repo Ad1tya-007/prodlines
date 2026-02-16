@@ -33,9 +33,9 @@ const features = [
   },
   {
     icon: Bell,
-    title: 'Email & Discord notifications',
+    title: 'Notifications',
     description:
-      'Get notified when stats sync. Connect a Discord webhook or enable email alerts in settings.',
+      'Get alerts via email, Discord, Slack, and more when stats sync. Stay informed your way.',
   },
   {
     icon: LayoutDashboard,
@@ -324,8 +324,8 @@ export default function LandingPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription className="text-muted-foreground">
-                  Discord webhooks, email alerts, CI checks. Learn how to embed
-                  ProdLines into your workflow.
+                  Discord and Slack webhooks, email alerts, CI checks. Learn how
+                  to embed ProdLines into your workflow.
                 </CardDescription>
               </CardContent>
             </Card>
