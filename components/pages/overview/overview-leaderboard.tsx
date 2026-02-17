@@ -30,8 +30,12 @@ function LeaderboardRow({
   const isTopThree = rank <= 3;
 
   return (
-    <Link
-      href={leaderboardHref}
+    <div
+      onClick={() => {
+        if (leaderboardHref === '/app/leaderboard') {
+          window.location.href = leaderboardHref;
+        }
+      }}
       className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none">
       <div className="flex items-center gap-4">
         <span
@@ -77,9 +81,11 @@ function LeaderboardRow({
           <p className="font-mono text-sm">{contributor.contributions}</p>
           <p className="text-xs text-muted-foreground">Contributions</p>
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        {leaderboardHref === '/app/leaderboard' && (
+          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
