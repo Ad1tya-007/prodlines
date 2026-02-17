@@ -182,36 +182,38 @@ export function PublicStatsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Public Repository Stats</h1>
-            <p className="text-muted-foreground text-md">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-1 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+              Public Repository Stats
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
               View production code ownership for any public GitHub repository
             </p>
           </div>
 
           {/* Search Input */}
-          <div className="mx-auto">
-            <div className="flex gap-2">
+          <div className="mx-auto w-full min-w-0">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full">
               <Input
                 type="text"
-                placeholder="Enter GitHub URL or owner/repo (e.g., facebook/react)"
+                placeholder="GitHub URL or owner/repo"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1"
+                className="flex-1 min-w-0 w-full sm:w-auto"
               />
               <Button
                 onClick={handleSearch}
                 disabled={!repoUrl.trim() || isLoading}
-                className="px-6">
-                <Search className="h-4 w-4 mr-2" />
+                className="w-full sm:w-auto shrink-0 px-6 min-h-10 sm:min-h-9">
+                <Search className="h-4 w-4 mr-2 shrink-0" />
                 Search
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Examples: https://github.com/vercel/next.js or vercel/next.js
+              e.g. vercel/next.js or github.com/vercel/next.js
             </p>
           </div>
 
@@ -219,20 +221,22 @@ export function PublicStatsPage() {
           {errorMessage && (
             <div
               className={cn(
-                'max-w-2xl mx-auto p-4 rounded-lg border',
+                'w-full max-w-2xl mx-auto p-3 sm:p-4 rounded-lg border min-w-0',
                 isPrivateRepoError
                   ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 dark:text-yellow-400'
                   : 'bg-destructive/10 border-destructive/50 text-destructive',
               )}>
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 min-w-0">
                 <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="font-medium">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm sm:text-base">
                     {isPrivateRepoError ? 'Private Repository' : 'Error'}
                   </p>
-                  <p className="text-sm mt-1">{errorMessage}</p>
+                  <p className="text-xs sm:text-sm mt-1 wrap-break-word">
+                    {errorMessage}
+                  </p>
                   {isPrivateRepoError && (
-                    <p className="text-sm mt-2">
+                    <p className="text-xs sm:text-sm mt-2 wrap-break-word">
                       To view stats for private repositories, please sign in and
                       connect your GitHub account.
                     </p>
@@ -249,27 +253,27 @@ export function PublicStatsPage() {
           {displayStats && repoParams && (
             <>
               {/* Repository Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold truncate min-w-0">
                       {repoParams.owner}/{repoParams.repo}
                     </h1>
                     <Badge
                       variant="outline"
-                      className="flex items-center gap-1">
+                      className="flex items-center gap-1 shrink-0">
                       <GitBranch className="h-3 w-3" />
                       {repoParams.branch || 'main'}
                     </Badge>
                   </div>
                   {stats && (
-                    <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                         Last sync: {formatLastSync(stats.lastSync)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                        <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                         {stats.activeContributors} contributors
                       </span>
                     </div>
@@ -281,22 +285,22 @@ export function PublicStatsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="hover-button bg-transparent shrink-0"
+                  className="hover-button bg-transparent w-full sm:w-auto shrink-0 min-h-10 sm:min-h-9"
                   onClick={handleResync}
                   disabled={isLoading || isFetching}>
                   <RefreshCw
-                    className={cn('h-4 w-4 mr-2', isFetching && 'animate-spin')}
+                    className={cn('h-4 w-4 mr-2 shrink-0', isFetching && 'animate-spin')}
                   />
                   {isFetching ? 'Refreshing...' : 'Refresh'}
                 </Button>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-2 border-b border-border/50">
+              <div className="flex gap-0 border-b border-border/50 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('overview')}
                   className={cn(
-                    'px-4 py-2 text-sm font-medium transition-colors relative',
+                    'px-4 py-3 sm:py-2 text-sm font-medium transition-colors relative shrink-0 min-h-[44px] sm:min-h-0 touch-manipulation',
                     activeTab === 'overview'
                       ? 'text-foreground'
                       : 'text-muted-foreground hover:text-foreground',
@@ -309,7 +313,7 @@ export function PublicStatsPage() {
                 <button
                   onClick={() => setActiveTab('leaderboard')}
                   className={cn(
-                    'px-4 py-2 text-sm font-medium transition-colors relative',
+                    'px-4 py-3 sm:py-2 text-sm font-medium transition-colors relative shrink-0 min-h-[44px] sm:min-h-0 touch-manipulation',
                     activeTab === 'leaderboard'
                       ? 'text-foreground'
                       : 'text-muted-foreground hover:text-foreground',
@@ -324,7 +328,7 @@ export function PublicStatsPage() {
               {/* Tab Content */}
               {activeTab === 'overview' ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {isLoading
                       ? [...Array(4)].map((_, i) => <KPICardSkeleton key={i} />)
                       : kpiCards.map((card, index) => (
@@ -332,29 +336,33 @@ export function PublicStatsPage() {
                         ))}
                   </div>
 
-                  <OverviewLeaderboard
-                    contributors={stats.contributors}
-                    isLoading={isLoading}
-                    leaderboardHref="/leaderboard"
-                  />
+                  <div className="min-w-0 overflow-hidden">
+                    <OverviewLeaderboard
+                      contributors={stats.contributors}
+                      isLoading={isLoading}
+                      leaderboardHref="/leaderboard"
+                    />
+                  </div>
                 </>
               ) : (
-                <ContributorsTab contributors={stats.contributors} />
+                <div className="min-w-0 overflow-x-auto">
+                  <ContributorsTab contributors={stats.contributors} />
+                </div>
               )}
             </>
           )}
 
           {/* Empty State */}
           {!repoParams && !isLoading && (
-            <div className="text-center py-12 space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                <Code2 className="h-8 w-8 text-muted-foreground" />
+            <div className="text-center py-8 sm:py-12 space-y-4 px-2">
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-muted">
+                <Code2 className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-base sm:text-lg font-semibold">
                   No repository selected
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
                   Enter a public GitHub repository URL above to view its stats
                 </p>
               </div>
