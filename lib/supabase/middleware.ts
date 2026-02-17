@@ -37,16 +37,20 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   
-  // Allow auth callback and logout routes without restrictions
-  if (pathname.startsWith('/auth/callback') || pathname === '/logout') {
+  // Allow auth callback, logout routes, and public API routes without restrictions
+  if (
+    pathname.startsWith('/auth/callback') || 
+    pathname === '/logout' ||
+    pathname.startsWith('/api/github/public-stats')
+  ) {
     return supabaseResponse
   }
 
-  const isPublicRoute = pathname === '/' || pathname === '/login'
+  const isPublicRoute = pathname === '/' || pathname === '/login' || pathname === '/public-stats' || pathname === '/leaderboard'
   const isAppRoute = pathname.startsWith('/app')
 
-  // If user is authenticated, redirect away from public routes
-  if (user && isPublicRoute) {
+  // If user is authenticated, redirect away from landing and login pages (but allow /public-stats)
+  if (user && (pathname === '/' || pathname === '/login')) {
     const url = request.nextUrl.clone()
     url.pathname = '/app/overview'
     return NextResponse.redirect(url)

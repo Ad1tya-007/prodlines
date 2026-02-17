@@ -19,14 +19,19 @@ import type { GitHubContributor } from '@/lib/types/github';
 interface LeaderboardRowProps {
   contributor: GitHubContributor;
   rank: number;
+  leaderboardHref: string;
 }
 
-function LeaderboardRow({ contributor, rank }: LeaderboardRowProps) {
+function LeaderboardRow({
+  contributor,
+  rank,
+  leaderboardHref,
+}: LeaderboardRowProps) {
   const isTopThree = rank <= 3;
 
   return (
     <Link
-      href="/app/leaderboard"
+      href={leaderboardHref}
       className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-all duration-200 group rounded-xl hover:rounded-none">
       <div className="flex items-center gap-4">
         <span
@@ -35,7 +40,7 @@ function LeaderboardRow({ contributor, rank }: LeaderboardRowProps) {
             rank === 1 && 'text-amber-500',
             rank === 2 && 'text-zinc-400',
             rank === 3 && 'text-amber-700',
-            rank > 3 && 'text-muted-foreground'
+            rank > 3 && 'text-muted-foreground',
           )}>
           {rank}
         </span>
@@ -45,7 +50,7 @@ function LeaderboardRow({ contributor, rank }: LeaderboardRowProps) {
             isTopThree ? 'ring-2 ring-offset-2 ring-offset-background' : '',
             rank === 1 && 'ring-amber-500',
             rank === 2 && 'ring-zinc-400',
-            rank === 3 && 'ring-amber-700'
+            rank === 3 && 'ring-amber-700',
           )}>
           <AvatarImage src={contributor.avatarUrl} alt={contributor.username} />
           <AvatarFallback className="bg-secondary text-foreground text-sm group-hover:rounded-none transition-all duration-200">
@@ -102,11 +107,14 @@ function LeaderboardSkeleton() {
 interface OverviewLeaderboardProps {
   contributors: GitHubContributor[];
   isLoading?: boolean;
+  /** Use /leaderboard for public pages, /app/leaderboard for authenticated app */
+  leaderboardHref?: string;
 }
 
 export function OverviewLeaderboard({
   contributors,
   isLoading = false,
+  leaderboardHref = '/app/leaderboard',
 }: OverviewLeaderboardProps) {
   return (
     <Card
@@ -123,10 +131,12 @@ export function OverviewLeaderboard({
             size="sm"
             className="hover-button bg-transparent"
             asChild>
-            <Link href="/app/leaderboard">
-              View all
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Link>
+            {leaderboardHref === '/app/leaderboard' && (
+              <Link href={leaderboardHref}>
+                View all
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            )}
           </Button>
         </div>
       </CardHeader>
@@ -140,6 +150,7 @@ export function OverviewLeaderboard({
                 key={contributor.id}
                 contributor={contributor}
                 rank={index + 1}
+                leaderboardHref={leaderboardHref}
               />
             ))}
           </div>

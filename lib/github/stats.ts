@@ -28,6 +28,16 @@ export async function fetchGitHubStats(
         `Invalid or expired GitHub token. Please check your GITHUB_TOKEN environment variable and restart the dev server. Status: ${repoResponse.status}`
       );
     }
+    if (repoResponse.status === 404) {
+      throw new Error(
+        `Repository not found or is private. Please ensure the repository exists and is public. Status: 404`
+      );
+    }
+    if (repoResponse.status === 403) {
+      throw new Error(
+        `Access forbidden. This repository may be private or you don't have permission to access it. Status: 403`
+      );
+    }
     console.error(
       `GitHub API Error fetching repo (${repoResponse.status}):`,
       errorText
